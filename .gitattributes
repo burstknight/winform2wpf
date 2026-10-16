@@ -1,0 +1,14 @@
+# Automatically handle eol for each files.
+* text=auto eol=lf
+
+# For text files
+*.[Mm][Dd] text
+*.txt text
+*.cs text
+*.nuspec text
+*.xaml text
+*.sln text
+*.csproj text
+*.config text
+*.vdproj text
+
