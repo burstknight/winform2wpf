@@ -1,0 +1,32 @@
+# WinForms to WPF mapping rules
+type_mappings:
+  System.Windows.Forms.Form: Window
+  System.Windows.Forms.UserControl: UserControl
+  System.Windows.Forms.Button: Button
+  System.Windows.Forms.Label: Label
+  System.Windows.Forms.TextBox: TextBox
+  System.Windows.Forms.CheckBox: CheckBox
+  System.Windows.Forms.RadioButton: RadioButton
+  System.Windows.Forms.Panel: StackPanel
+  System.Windows.Forms.GroupBox: GroupBox
+  System.Windows.Forms.FlowLayoutPanel: WrapPanel
+  System.Windows.Forms.TableLayoutPanel: Grid
+  System.Windows.Forms.TabControl: TabControl
+  System.Windows.Forms.TabPage: TabItem
+  System.Windows.Forms.MenuStrip: Menu
+  System.Windows.Forms.ToolStrip: ToolBar
+  System.Windows.Forms.StatusStrip: StatusBar
+
+property_mappings:
+  Text: Content
+  Enabled: IsEnabled
+  Visible: Visibility
+  TabIndex: TabIndex
+  Name: x:Name
+
+dock_mappings:
+  Top: Top
+  Bottom: Bottom
+  Left: Left
+  Right: Right
+  Fill: Fill
