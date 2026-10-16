@@ -65,8 +65,22 @@ def infer_container_panel(control: Control) -> dict[str, Any]:
         result["rationale"] = "Dock intent detected -> DockPanel"
         return result
 
-    # 4. Linear chain detection (skeleton - simplified)
-    # Full implementation will analyze coordinates/spacing
+    # 4. Linear chain detection - simple heuristic
+    # For horizontal buttons (e.g., same Y, increasing X), prefer horizontal stack
+    if len(control.children) >= 2:
+        ys = []
+        xs = []
+        for c in control.children:
+            ys.append(c.location_y if c.location_y is not None else 0)
+            xs.append(c.location_x if c.location_x is not None else 0)
+        y_spread = max(ys) - min(ys) if ys else 0
+        x_spread = max(xs) - min(xs) if xs else 0
+        if y_spread < 20 and x_spread > 10:  # roughly same row, spread horizontally
+            result["panel_type"] = "StackPanel"
+            result["orientation"] = "Horizontal"
+            result["rationale"] = "Horizontal linear chain -> StackPanel (Horizontal)"
+            return result
+
     result["panel_type"] = "StackPanel"
     result["orientation"] = "Vertical"
     result["rationale"] = "Default linear chain -> StackPanel (Vertical)"
@@ -84,11 +98,14 @@ def analyze_tree(tree: ControlTree) -> dict[str, dict[str, Any]]:
     """
     decisions: dict[str, dict[str, Any]] = {}
 
+    # Analyze containers (controls that have children)
     for name, control in tree.controls.items():
         if control.children:
             decisions[name] = infer_container_panel(control)
 
+    # Analyze root
     if tree.root and tree.root.name not in decisions and tree.root.children:
-        decisions[tree.root.name or "root"] = infer_container_panel(tree.root)
+        key = tree.root.name or "root"
+        decisions[key] = infer_container_panel(tree.root)
 
     return decisions
