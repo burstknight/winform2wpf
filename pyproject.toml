@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wf2wpf"
+version = "0.1.0"
+description = "Convert WinForms Designer.cs to WPF XAML with layout inference"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "winform2wpf" }]
+
+[project.scripts]
+wf2wpf = "wf2wpf.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wf2wpf"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "rich>=13.7",
+  "pyyaml>=6.0",
+]
