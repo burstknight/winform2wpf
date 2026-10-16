@@ -1,0 +1,1 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form4" Title="Flow"><StackPanel x:Name="flowLayoutPanel1"><Button x:Name="button1" Content="A" /><Button x:Name="button2" Content="B" /><Button x:Name="button3" Content="C" /></StackPanel></Window>
