@@ -96,6 +96,16 @@ class ControlTree:
                     parent.children.append(ctrl)
 
 
+def _extract_quoted(val: str) -> Optional[str]:
+    q = re.search(r'"([^"]*)"', val)
+    if q:
+        return q.group(1)
+    q2 = re.search(r"'([^']*)'", val)
+    if q2:
+        return q2.group(1)
+    return None
+
+
 def parse_designer_cs(path: str | Path) -> ControlTree:
     """Parse a Designer.cs file and return a control tree.
 
@@ -121,7 +131,7 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
     tree.root = root
     tree.add_control(root)
 
-    # Extract control declarations: private System.Windows.Forms.Xxx name;
+    # Extract control declarations
     decl_re = re.compile(
         r"private\s+(?:System\.(?:Windows\.)?Forms\.|System\.ComponentModel\.)?(\w+)\s+(\w+)\s*;",
         re.IGNORECASE,
@@ -147,18 +157,18 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
         ctrl = tree.get_control(cname)
         if not ctrl:
             continue
-        if prop.lower() == "name":
+        pl = prop.lower()
+        if pl == "name":
             ctrl.name = cname
-        elif prop.lower() == "text":
-            # Extract quoted string
-            q = re.search(r'"([^"]*)"', val)
-            if q:
-                ctrl.text = q.group(1)
-        elif prop.lower() == "dock":
+        elif pl == "text":
+            qv = _extract_quoted(val)
+            if qv is not None:
+                ctrl.text = qv
+        elif pl == "dock":
             d = re.search(r"DockStyle\.(\w+)", val)
             if d:
                 ctrl.dock = d.group(1)
-        elif prop.lower() == "location":
+        elif pl == "location":
             p = re.search(r"Point\(([^,]+),\s*([^)]+)\)", val)
             if p:
                 try:
@@ -166,7 +176,7 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
                     ctrl.location_y = float(p.group(2).strip())
                 except Exception:
                     pass
-        elif prop.lower() == "size":
+        elif pl == "size":
             s = re.search(r"Size\(([^,]+),\s*([^)]+)\)", val)
             if s:
                 try:
@@ -175,7 +185,25 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
                 except Exception:
                     pass
 
-    # Add controls: this.container.Controls.Add(this.child);
+    # Form-level properties: this.Property = ...
+    formprop_re = re.compile(
+        r"this\.(\w+)\s*=\s*([^;]+);",
+        re.IGNORECASE,
+    )
+    for m in formprop_re.finditer(content):
+        prop = m.group(1)
+        val = m.group(2).strip()
+        pl = prop.lower()
+        if pl == "name":
+            if root:
+                root.name = _extract_quoted(val) or val.strip() or root.name
+        elif pl == "text":
+            if root:
+                qv = _extract_quoted(val)
+                if qv is not None:
+                    root.text = qv
+
+    # Add controls
     add_re = re.compile(
         r"this\.(\w+)\.Controls\.Add\(this\.(\w+)\)",
         re.IGNORECASE,
@@ -187,7 +215,6 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
         if c:
             c.parent_name = parent
 
-    # Add to root if added to this.Controls
     addroot_re = re.compile(
         r"this\.Controls\.Add\(this\.(\w+)\)",
         re.IGNORECASE,
