@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Convert WinForms Designer.cs to WPF XAML with layout inference"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "winform2wpf" }]
+authors = [{ name = "burstknight", email = "burstknight@gmail.com" }]
 
 [project.scripts]
 wf2wpf = "wf2wpf.cli:main"
