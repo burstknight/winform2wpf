@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
+from wf2wpf.io import TextFileReader
+
 
 @dataclass
 class Control:
@@ -106,11 +108,13 @@ def _extract_quoted(val: str) -> Optional[str]:
     return None
 
 
-def parse_designer_cs(path: str | Path) -> ControlTree:
+def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None) -> ControlTree:
     """Parse a Designer.cs file and return a control tree.
 
     Args:
         path: Path to Designer.cs file.
+        reader: Optional text reader with a configured encoding detector.
+            When omitted, a reader with default auto-detection is used.
 
     Returns:
         ControlTree containing parsed controls.
@@ -118,7 +122,7 @@ def parse_designer_cs(path: str | Path) -> ControlTree:
     path = Path(path)
     tree = ControlTree()
     try:
-        content = path.read_text(encoding="utf-8", errors="ignore")
+        content = (reader or TextFileReader()).read_all_text(path)
     except Exception:
         return tree
 

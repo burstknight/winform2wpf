@@ -8,6 +8,12 @@ from pathlib import Path
 
 from wf2wpf import __version__
 from wf2wpf.analyzer import analyze_tree
+from wf2wpf.io import (
+    DEFAULT_FALLBACK_ENCODINGS,
+    DefaultTextFileEncodingDetector,
+    MappingTextFileEncodingDetector,
+    TextFileReader,
+)
 from wf2wpf.parser import parse_designer_cs
 from wf2wpf.renderer import render_xaml
 from wf2wpf.report import generate_report
@@ -51,6 +57,36 @@ def main() -> None:
         default="text",
         help="Report format (default: text)",
     )
+    convert_parser.add_argument(
+        "--src-encoding",
+        default="auto",
+        help=(
+            "Force the source file encoding instead of auto-detecting "
+            "(e.g. utf-8, big5, cp950; default: auto)"
+        ),
+    )
+    convert_parser.add_argument(
+        "--encoding-fallbacks",
+        help=(
+            "Comma-separated fallback encodings tried during auto-detection "
+            f"(default: {','.join(DEFAULT_FALLBACK_ENCODINGS)})"
+        ),
+    )
+    convert_parser.add_argument(
+        "--encoding-map",
+        action="append",
+        default=[],
+        metavar="GLOB=ENCODING",
+        help=(
+            "Force the encoding for paths matching a glob pattern; may be "
+            'repeated (e.g. --encoding-map "**/*.Designer.cs=big5")'
+        ),
+    )
+    convert_parser.add_argument(
+        "--encoding-report",
+        action="store_true",
+        help="Print the detected encoding for the input file",
+    )
 
     args = parser.parse_args()
 
@@ -58,6 +94,35 @@ def main() -> None:
         _handle_convert(args)
     else:
         parser.print_help()
+
+
+def _build_reader(args: argparse.Namespace) -> TextFileReader:
+    """Build a text reader from the encoding-related CLI options."""
+    forced = None if args.src_encoding.lower() == "auto" else args.src_encoding
+
+    fallbacks = None
+    if args.encoding_fallbacks:
+        fallbacks = [name.strip() for name in args.encoding_fallbacks.split(",") if name.strip()]
+
+    detector = DefaultTextFileEncodingDetector(
+        forced_encoding=forced,
+        fallback_encoding_names=fallbacks,
+    )
+
+    if args.encoding_map:
+        mappings = []
+        for item in args.encoding_map:
+            pattern, _, encoding = item.partition("=")
+            if not pattern or not encoding:
+                print(
+                    f"Error: invalid --encoding-map value '{item}' (expected GLOB=ENCODING)",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            mappings.append((pattern, encoding.strip()))
+        detector = MappingTextFileEncodingDetector(mappings, fallback_detector=detector)
+
+    return TextFileReader(detector)
 
 
 def _handle_convert(args: argparse.Namespace) -> None:
@@ -72,8 +137,14 @@ def _handle_convert(args: argparse.Namespace) -> None:
         output_path = input_path.with_suffix(".xaml")
 
     try:
+        reader = _build_reader(args)
+
+        if args.encoding_report:
+            _, detected = reader.read_all_text_with_detection(input_path)
+            print(f"Encoding: {input_path} -> {detected.name} ({detected.reason.value})")
+
         # Parse
-        tree = parse_designer_cs(input_path)
+        tree = parse_designer_cs(input_path, reader=reader)
 
         # Analyze
         decisions = analyze_tree(tree)
