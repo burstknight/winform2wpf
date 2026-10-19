@@ -47,10 +47,12 @@ def render_xaml(
     ET.register_namespace("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")
     ET.register_namespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
 
+    # Pretty-print with tab indentation for readable output
+    ET.indent(root_elem, space="\t")
     xml_str = ET.tostring(root_elem, encoding="unicode", xml_declaration=False)
 
     if output_path:
-        Path(output_path).write_text(xml_str, encoding="utf-8")
+        Path(output_path).write_text(xml_str, encoding="utf-8", newline="\n")
 
     return xml_str
 
