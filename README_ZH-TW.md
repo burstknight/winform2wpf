@@ -72,6 +72,36 @@ uv run wf2wpf --help
 - MVP 初版僅提供 `.resx` 處理骨架（暫不完整實作）
 - 自訂或第三方控制項可能需要人工調整
 
+## 原始檔編碼處理
+
+早期的繁體中文 WinForms 專案常以 Big5／CP950（Windows ANSI）儲存，而非 UTF-8。若直接用 UTF-8 讀取，中文字串就會變成亂碼。`wf2wpf` 會在解析前先偵測輸入編碼，順序如下：
+
+1. 明確指定的編碼（強制覆蓋）
+2. BOM（UTF-8、UTF-16 LE/BE）
+3. 嚴格 UTF-8（只有在整份檔案能完整解碼且無 BOM 時才判定）
+4. 後備編碼（預設為 Big5，其次 CP950）
+
+轉換後的 XAML 檔案一律以 UTF-8（無 BOM）輸出。編碼偵測邏輯集中於 `wf2wpf.io`，日後要擴充其他語系也很容易。
+
+`convert` 相關選項：
+
+```bash
+# 自動偵測（預設）
+uv run wf2wpf convert path/to/Form.Designer.cs
+
+# 對所有輸入檔強制指定編碼
+uv run wf2wpf convert path/to/Form.Designer.cs --src-encoding big5
+
+# 覆寫自動偵測的後備編碼順序
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-fallbacks big5,cp950
+
+# 針對符合 glob 的路徑強制指定編碼（可重複使用）
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-map "**/*.Designer.cs=big5"
+
+# 顯示偵測到的編碼（除錯用）
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-report
+```
+
 ## 文件連結
 
 - [開發計畫（英文）](docs/DEVELOPMENT_PLAN_EN.md) / [（繁體中文）](docs/DEVELOPMENT_PLAN_ZH-TW.md)

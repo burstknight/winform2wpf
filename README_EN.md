@@ -72,6 +72,36 @@ uv run wf2wpf --help
 - `.resx` resource handling is minimal in MVP (placeholder)
 - Complex custom/user controls may require manual adjustment
 
+## Source File Encoding
+
+Older traditional Chinese WinForms projects are often saved as Big5/CP950 (Windows ANSI) instead of UTF-8. Reading them as UTF-8 produces mojibake for Chinese literals. `wf2wpf` detects the input encoding before parsing in this order:
+
+1. Forced encoding (explicit override)
+2. BOM (UTF-8, UTF-16 LE/BE)
+3. Strict UTF-8 (only when the whole file decodes cleanly without a BOM)
+4. Fallbacks (default: Big5, then CP950)
+
+Converted XAML files are always written as UTF-8 (no BOM). The detection logic lives in `wf2wpf.io` and is extensible for other languages later.
+
+Relevant `convert` options:
+
+```bash
+# Auto-detect (default)
+uv run wf2wpf convert path/to/Form.Designer.cs
+
+# Force a single encoding for every input file
+uv run wf2wpf convert path/to/Form.Designer.cs --src-encoding big5
+
+# Override the auto-detect fallback order
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-fallbacks big5,cp950
+
+# Force an encoding for paths matching a glob (repeatable)
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-map "**/*.Designer.cs=big5"
+
+# Show the detected encoding (useful for debugging)
+uv run wf2wpf convert path/to/Form.Designer.cs --encoding-report
+```
+
 ## Documentation
 
 - [Development Plan (EN)](docs/DEVELOPMENT_PLAN_EN.md) / [(ZH-TW)](docs/DEVELOPMENT_PLAN_ZH-TW.md)
