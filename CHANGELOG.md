@@ -13,6 +13,9 @@
 
 ### [Changed]
 
+- Rendered XAML is now pretty-printed with tab indentation instead of a single line; golden files in `tests/expected/` reformatted the same way (content unchanged)
+- `.editorconfig` now enforces tab indentation for `*.xaml`
+
 ### [Fixed]
 
 ### [Security]

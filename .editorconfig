@@ -19,6 +19,10 @@ indent_size = 4
 # Tab indentation (no size specified)
 indent_style = tab
 
+[*.xaml]
+# Tab indentation for XAML (matches golden files and renderer output)
+indent_style = tab
+
 # Indentation override for all JS under lib directory
 [lib/**.js]
 indent_style = space
