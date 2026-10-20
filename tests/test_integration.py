@@ -73,6 +73,11 @@ def test_integration_tablelayout():
     # Regression: children added via the 3-argument Add overload must render.
     assert "x:Name=\"label1\"" in xaml
     assert "x:Name=\"textBox1\"" in xaml
+    # Table structure: definitions plus per-cell attached properties.
+    assert "Grid.RowDefinitions" in xaml
+    assert "Grid.ColumnDefinitions" in xaml
+    assert "Grid.Column=\"0\"" in xaml
+    assert "Grid.Column=\"1\"" in xaml
     ET.fromstring(xaml)
 
 

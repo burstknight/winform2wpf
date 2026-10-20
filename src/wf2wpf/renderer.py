@@ -88,11 +88,42 @@ def _render_container(
     if orientation and panel_name == "StackPanel":
         panel_elem.set("Orientation", orientation)
 
+    if panel_elem.tag == "Grid":
+        _add_grid_definitions(control, panel_elem)
+
     for child in control.children:
         child_elem = _create_element(child, panel_elem, panel_name)
         _set_text(child, child_elem)
         if child.children:
             _render_container(child, child_elem, decisions)
+
+
+def _add_grid_definitions(control: Control, panel_elem: ET.Element) -> None:
+    """Emit RowDefinitions/ColumnDefinitions for a TableLayoutPanel-backed Grid.
+
+    Column/Row styles are approximated: WinForms percent styles map to equal
+    star-sized definitions (a follow-up in TODO.md covers absolute pixel
+    styles). Grids used for absolute layout (no counts, no cells) get no
+    definitions.
+    """
+    cells = [c for c in control.children if c.column is not None or c.row is not None]
+    column_count = control.column_count
+    row_count = control.row_count
+    if cells:
+        if not column_count:
+            column_count = max((c.column for c in cells if c.column is not None), default=-1) + 1
+        if not row_count:
+            row_count = max((c.row for c in cells if c.row is not None), default=-1) + 1
+    if not column_count and not row_count:
+        return
+    if row_count:
+        row_defs = ET.SubElement(panel_elem, "Grid.RowDefinitions")
+        for _ in range(row_count):
+            ET.SubElement(row_defs, "RowDefinition").set("Height", "*")
+    if column_count:
+        col_defs = ET.SubElement(panel_elem, "Grid.ColumnDefinitions")
+        for _ in range(column_count):
+            ET.SubElement(col_defs, "ColumnDefinition").set("Width", "*")
 
 
 def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -> ET.Element:
@@ -103,6 +134,12 @@ def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -
         elem.set("x:Name", child.name)
     if child.dock and panel_name == "DockPanel":
         elem.set("DockPanel.Dock", child.dock)
+    if panel_name == "Grid":
+        # TableLayoutPanel cell placement; ignored when unset (absolute layout).
+        if child.column is not None:
+            elem.set("Grid.Column", str(child.column))
+        if child.row is not None:
+            elem.set("Grid.Row", str(child.row))
     return elem
 
 
