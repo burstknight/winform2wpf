@@ -70,6 +70,9 @@ def test_integration_tablelayout():
     decisions = analyze_tree(tree)
     xaml = render_xaml(tree, decisions)
     assert "<Window" in xaml
+    # Regression: children added via the 3-argument Add overload must render.
+    assert "x:Name=\"label1\"" in xaml
+    assert "x:Name=\"textBox1\"" in xaml
     ET.fromstring(xaml)
 
 

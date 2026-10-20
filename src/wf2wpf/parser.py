@@ -191,6 +191,14 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                     ctrl.size_h = float(s.group(2).strip())
                 except Exception:
                     pass
+        elif pl in ("columncount", "rowcount"):
+            n = re.match(r"\d+", val)
+            if n:
+                count = int(n.group(0))
+                if pl == "columncount":
+                    ctrl.column_count = count
+                else:
+                    ctrl.row_count = count
 
     # Form-level properties: "this.Property = ..." or "Property = ..." (modern
     # style). The line anchor is essential: without it, an indented
@@ -213,11 +221,13 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                     root.text = qv
 
     # Add controls
-    # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern).
+    # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern),
+    # with the TableLayoutPanel overload "Add(child, column, row)".
     # Anchored so the form-level "Controls.Add(x)" form below never matches
     # as a child control named "Controls".
     add_re = re.compile(
-        r"^[ \t]*(?:this\.)?(\w+)\.Controls\.Add\(\s*(?:this\.)?(\w+)\s*\)",
+        r"^[ \t]*(?:this\.)?(\w+)\.Controls\.Add\(\s*(?:this\.)?(\w+)"
+        r"\s*(?:,\s*(\d+)\s*,\s*(\d+)\s*)?\)",
         re.IGNORECASE | re.MULTILINE,
     )
     for m in add_re.finditer(content):
@@ -228,6 +238,9 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
         c = tree.get_control(child)
         if c:
             c.parent_name = parent
+            if m.group(3) is not None and m.group(4) is not None:
+                c.column = int(m.group(3))
+                c.row = int(m.group(4))
 
     addroot_re = re.compile(
         r"^[ \t]*(?:this\.)?Controls\.Add\(\s*(?:this\.)?(\w+)\s*\)",

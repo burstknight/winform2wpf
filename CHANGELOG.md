@@ -21,6 +21,7 @@
 ### [Fixed]
 
 - Parser now supports modern .NET designer files that omit the `this.` qualifier (control/form property assignments and `Controls.Add`); previously such files silently produced an empty `<Window />` with zero children
+- Parser now recognizes the three-argument `Controls.Add(child, column, row)` overload and records the cell position (`Control.column`/`row`) plus `ColumnCount`/`RowCount`; TableLayoutPanel children were previously orphaned and dropped from the rendered XAML (the `05_tablelayout` case recorded in `TODO.md`)
 
 ### [Security]
 

@@ -111,3 +111,65 @@ def test_parse_modern_style_does_not_misread_control_text_as_form_text():
         tree = parse_designer_cs(p)
         assert tree.root.text == "表單"
         assert tree.get_control("button1").text == "按鈕"
+
+
+_TABLE_LAYOUT_DESIGNER = """partial class Form1
+{
+    private void InitializeComponent()
+    {
+        tableLayoutPanel1 = new TableLayoutPanel();
+        label1 = new Label();
+        textBox1 = new TextBox();
+        @Q@tableLayoutPanel1.ColumnCount = 2;
+        @Q@tableLayoutPanel1.RowCount = 1;
+        @Q@tableLayoutPanel1.Controls.Add(@Q@label1, 0, 0);
+        @Q@tableLayoutPanel1.Controls.Add(@Q@textBox1, 1, 0);
+        @Q@Controls.Add(@Q@tableLayoutPanel1);
+    }
+    private TableLayoutPanel tableLayoutPanel1;
+    private Label label1;
+    private TextBox textBox1;
+}
+"""
+
+
+def _parse_table_layout(qualifier: str) -> ControlTree:
+    designer = _TABLE_LAYOUT_DESIGNER.replace("@Q@", qualifier)
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "Form1.Designer.cs"
+        p.write_text(designer, encoding="utf-8")
+        return parse_designer_cs(p)
+
+
+def test_parse_three_argument_add_classic_style():
+    """`this.x.Controls.Add(this.y, col, row)` must record the cell position."""
+    tree = _parse_table_layout("this.")
+    grid = tree.get_control("tableLayoutPanel1")
+    assert grid.column_count == 2
+    assert grid.row_count == 1
+    assert [c.name for c in grid.children] == ["label1", "textBox1"]
+    label, textbox = grid.children
+    assert (label.column, label.row) == (0, 0)
+    assert (textbox.column, textbox.row) == (1, 0)
+
+
+def test_parse_three_argument_add_modern_style():
+    """The this-less modern style must record cell positions identically."""
+    tree = _parse_table_layout("")
+    grid = tree.get_control("tableLayoutPanel1")
+    assert grid.column_count == 2
+    assert grid.row_count == 1
+    assert [c.name for c in grid.children] == ["label1", "textBox1"]
+    assert (grid.children[0].column, grid.children[0].row) == (0, 0)
+    assert (grid.children[1].column, grid.children[1].row) == (1, 0)
+
+
+def test_tablelayout_fixture_children_attached():
+    """Regression: 05_tablelayout children were orphaned by the 3-arg Add."""
+    fixture = get_fixture_path("05_tablelayout.Designer.cs")
+    tree = parse_designer_cs(fixture)
+    grid = tree.get_control("tableLayoutPanel1")
+    assert grid is not None
+    assert [c.name for c in grid.children] == ["label1", "textBox1"]
+    assert (grid.children[0].column, grid.children[0].row) == (0, 0)
+    assert (grid.children[1].column, grid.children[1].row) == (1, 0)
