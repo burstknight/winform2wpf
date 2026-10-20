@@ -219,6 +219,15 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                 qv = _extract_quoted(val)
                 if qv is not None:
                     root.text = qv
+        elif pl == "clientsize":
+            if root:
+                s = re.search(r"Size\(([^,]+),\s*([^)]+)\)", val)
+                if s:
+                    try:
+                        root.size_w = float(s.group(1).strip())
+                        root.size_h = float(s.group(2).strip())
+                    except Exception:
+                        pass
 
     # Add controls
     # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern),

@@ -203,3 +203,45 @@ def test_render_absolute_grid_has_no_definitions():
     doc = ET.fromstring(xaml)
     local = lambda tag: tag.rsplit("}", 1)[-1]
     assert not any(local(e.tag).endswith("Definitions") for e in doc.iter())
+
+
+def test_render_absolute_grid_children_keep_location_and_size():
+    """Location/Size must reach the XAML as margin and explicit dimensions."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(name="panel1", type_name="System.Windows.Forms.Panel")
+    a = Control(
+        name="a",
+        type_name="Button",
+        text="Go",
+        location_x=10,
+        location_y=20,
+        size_w=100,
+        size_h=30,
+    )
+    panel.children.append(a)
+    root.children.append(panel)
+    tree = _build_tree(root, [panel, a])
+
+    decisions = {"panel1": {"panel_type": "Grid", "orientation": None}}
+    xaml = render_xaml(tree, decisions)
+    doc = ET.fromstring(xaml)
+    local = lambda tag: tag.rsplit("}", 1)[-1]
+    btn = next(e for e in doc.iter() if local(e.tag) == "Button")
+    assert btn.get("HorizontalAlignment") == "Left"
+    assert btn.get("VerticalAlignment") == "Top"
+    assert btn.get("Margin") == "10,20,0,0"
+    assert btn.get("Width") == "100"
+    assert btn.get("Height") == "30"
+
+
+def test_render_window_dimensions_from_client_size():
+    """The form's ClientSize becomes the WPF Window Width/Height."""
+    tree = ControlTree()
+    root = Control(name="Form1", type_name="Form", size_w=800, size_h=600)
+    tree.root = root
+    tree.add_control(root)
+
+    xaml = render_xaml(tree, {})
+    assert 'Width="800"' in xaml
+    assert 'Height="600"' in xaml
+    ET.fromstring(xaml)

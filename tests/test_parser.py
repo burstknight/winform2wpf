@@ -67,6 +67,8 @@ def test_parse_modern_style_without_this_qualifier():
     assert tree.root is not None
     assert tree.root.text == "現代風格表單"
     assert tree.root.name == "Form7"
+    assert tree.root.size_w == 320.0
+    assert tree.root.size_h == 240.0
 
     # Control properties
     group = tree.get_control("groupBox1")
@@ -173,3 +175,12 @@ def test_tablelayout_fixture_children_attached():
     assert [c.name for c in grid.children] == ["label1", "textBox1"]
     assert (grid.children[0].column, grid.children[0].row) == (0, 0)
     assert (grid.children[1].column, grid.children[1].row) == (1, 0)
+
+
+def test_parse_classic_client_size():
+    """Classic this-qualified `this.ClientSize = ...` sets the root dimensions."""
+    fixture = get_fixture_path("05_tablelayout.Designer.cs")
+    tree = parse_designer_cs(fixture)
+    assert tree.root is not None
+    assert tree.root.size_w == 284.0
+    assert tree.root.size_h == 54.0

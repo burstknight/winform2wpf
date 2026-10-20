@@ -25,6 +25,8 @@
 - Renderer keeps a container control's `Text` (e.g. GroupBox station headers) as the WPF `Header` instead of dropping it, and emits `Header` rather than the invalid `Content` on GroupBox elements; elements with no WPF text property (panels, layout containers) no longer receive a stray `Content` attribute
 - Renderer no longer nests a duplicate inner panel when the container element already maps to the inferred panel type (`TableLayoutPanel` -> `Grid`, `FlowLayoutPanel` -> `WrapPanel`, `Panel` -> `StackPanel`), which had emitted `Grid` inside `Grid` and the extra `WrapPanel` recorded in `TODO.md`
 - Renderer emits `RowDefinitions`/`ColumnDefinitions` and the `Grid.Row`/`Grid.Column` attached properties for `TableLayoutPanel` grids (percent styles map to equal star sizes); previously all cells collapsed into a single overlapping cell
+- Analyzer now separates vertical linear chains from layouts scattered on both axes: scattered containers infer a `Grid` (the priority its docstring already promised) instead of a vertical `StackPanel` that reflowed absolute layouts
+- Absolute layout fidelity: children of layout `Grid`s keep their WinForms `Location`/`Size` as `HorizontalAlignment`/`VerticalAlignment` + `Margin` + `Width`/`Height`, and the form `ClientSize` becomes the WPF `Window` `Width`/`Height`; parsed `Location`/`Size` data was previously discarded by the renderer
 
 ### [Security]
 

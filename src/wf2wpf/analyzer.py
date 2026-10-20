@@ -1,7 +1,8 @@
 """Layout inference for WinForms control tree.
 
 This module analyzes control layout intent and infers appropriate WPF panels
-(StackPanel, DockPanel, WrapPanel, Grid). Canvas is only used as a last resort.
+(StackPanel, DockPanel, WrapPanel, Grid). Absolute layouts fall back to a Grid
+with per-child margins; Canvas is never required.
 """
 
 from __future__ import annotations
@@ -21,9 +22,11 @@ def infer_container_panel(control: Control) -> dict[str, Any]:
         1. FlowLayoutPanel -> WrapPanel
         2. TableLayoutPanel -> Grid
         3. Dock intent -> DockPanel
-        4. Linear chains (horizontal/vertical) -> StackPanel
-        5. Otherwise -> Grid with Margin/alignment
-        6. Fallback -> Grid
+        4. Linear chains (same row -> Horizontal, same column -> Vertical)
+           -> StackPanel
+        5. Children scattered on both axes (absolute WinForms layout)
+           -> Grid, rendered with per-child Margin/Width/Height
+        6. Single child -> StackPanel (Vertical)
 
     Args:
         control: Container control to analyze.
@@ -66,7 +69,8 @@ def infer_container_panel(control: Control) -> dict[str, Any]:
         return result
 
     # 4. Linear chain detection - simple heuristic
-    # For horizontal buttons (e.g., same Y, increasing X), prefer horizontal stack
+    # Same row (e.g. horizontal buttons) -> horizontal stack; same column
+    # (e.g. a list of radio buttons) -> vertical stack.
     if len(control.children) >= 2:
         ys = []
         xs = []
@@ -80,10 +84,22 @@ def infer_container_panel(control: Control) -> dict[str, Any]:
             result["orientation"] = "Horizontal"
             result["rationale"] = "Horizontal linear chain -> StackPanel (Horizontal)"
             return result
+        if x_spread < 20:  # roughly same column, stacked vertically
+            result["panel_type"] = "StackPanel"
+            result["orientation"] = "Vertical"
+            result["rationale"] = "Vertical linear chain -> StackPanel (Vertical)"
+            return result
+        # 5. Scattered on both axes: an absolute WinForms layout that must not
+        # be reflowed into a stack - keep positions via a Grid + Margin.
+        result["panel_type"] = "Grid"
+        result["orientation"] = None
+        result["rationale"] = "Scattered absolute positions -> Grid with Margin"
+        return result
 
+    # 6. Single child: a vertical stack is the neutral choice.
     result["panel_type"] = "StackPanel"
     result["orientation"] = "Vertical"
-    result["rationale"] = "Default linear chain -> StackPanel (Vertical)"
+    result["rationale"] = "Single child -> StackPanel (Vertical)"
     return result
 
 

@@ -105,6 +105,9 @@ def test_integration_modern_style():
     assert "Content=\"送出\"" in xaml
     # Container GroupBox keeps its WinForms text as the WPF Header.
     assert "Header=\"站號\"" in xaml
+    # ClientSize becomes the window dimensions.
+    assert "Width=\"320\"" in xaml
+    assert "Height=\"240\"" in xaml
 
     root = ET.fromstring(xaml)
     names = [elem.get("{http://schemas.microsoft.com/winfx/2006/xaml}Name") for elem in root.iter()]

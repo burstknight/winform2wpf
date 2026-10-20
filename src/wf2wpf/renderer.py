@@ -38,6 +38,12 @@ def render_xaml(
             root_elem.set("x:Name", tree.root.name)
         if tree.root.text:
             root_elem.set("Title", tree.root.text)
+        # ClientSize of the WinForms form approximates the WPF window size
+        # (WPF Width/Height include chrome; close enough for migration).
+        if tree.root.size_w is not None:
+            root_elem.set("Width", _num(tree.root.size_w))
+        if tree.root.size_h is not None:
+            root_elem.set("Height", _num(tree.root.size_h))
 
     # Render children of root
     if tree.root:
@@ -126,6 +132,11 @@ def _add_grid_definitions(control: Control, panel_elem: ET.Element) -> None:
             ET.SubElement(col_defs, "ColumnDefinition").set("Width", "*")
 
 
+def _num(value: float) -> str:
+    """Format a parsed WinForms number for XAML (12.0 -> '12')."""
+    return f"{value:g}"
+
+
 def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -> ET.Element:
     """Create XAML element for child control."""
     child_type = _get_wpf_short_type(child.type_name)
@@ -140,6 +151,22 @@ def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -
             elem.set("Grid.Column", str(child.column))
         if child.row is not None:
             elem.set("Grid.Row", str(child.row))
+        # Absolute-layout children (no cell, no dock) keep their WinForms
+        # Location/Size as top-left alignment, margin, and explicit size.
+        if child.column is None and child.dock is None:
+            has_position = child.location_x is not None and child.location_y is not None
+            if has_position or child.size_w is not None or child.size_h is not None:
+                elem.set("HorizontalAlignment", "Left")
+                elem.set("VerticalAlignment", "Top")
+            if has_position:
+                elem.set(
+                    "Margin",
+                    f"{_num(child.location_x)},{_num(child.location_y)},0,0",
+                )
+            if child.size_w is not None:
+                elem.set("Width", _num(child.size_w))
+            if child.size_h is not None:
+                elem.set("Height", _num(child.size_h))
     return elem
 
 
