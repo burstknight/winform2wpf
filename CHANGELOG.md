@@ -22,6 +22,8 @@
 
 - Parser now supports modern .NET designer files that omit the `this.` qualifier (control/form property assignments and `Controls.Add`); previously such files silently produced an empty `<Window />` with zero children
 - Parser now recognizes the three-argument `Controls.Add(child, column, row)` overload and records the cell position (`Control.column`/`row`) plus `ColumnCount`/`RowCount`; TableLayoutPanel children were previously orphaned and dropped from the rendered XAML (the `05_tablelayout` case recorded in `TODO.md`)
+- Renderer keeps a container control's `Text` (e.g. GroupBox station headers) as the WPF `Header` instead of dropping it, and emits `Header` rather than the invalid `Content` on GroupBox elements; elements with no WPF text property (panels, layout containers) no longer receive a stray `Content` attribute
+- Renderer no longer nests a duplicate inner panel when the container element already maps to the inferred panel type (`TableLayoutPanel` -> `Grid`, `FlowLayoutPanel` -> `WrapPanel`, `Panel` -> `StackPanel`), which had emitted `Grid` inside `Grid` and the extra `WrapPanel` recorded in `TODO.md`
 
 ### [Security]
 

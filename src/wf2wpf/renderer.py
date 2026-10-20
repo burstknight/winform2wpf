@@ -66,7 +66,6 @@ def _render_container(
 
     panel_name = "StackPanel"
     orientation = None
-    dock_target = None
 
     key = control.name or "root"
     dec = decisions.get(key) or decisions.get("root") or {}
@@ -78,19 +77,22 @@ def _render_container(
         if orient:
             orientation = orient
 
-    panel_elem = ET.SubElement(parent_elem, panel_name)
-    if control.name and panel_name != "Window":
-        pass  # Don't duplicate name on inner panel unless needed
+    # Reuse the container's own element when it already maps to the inferred
+    # panel type (e.g. TableLayoutPanel -> Grid, FlowLayoutPanel -> WrapPanel);
+    # otherwise add an inner panel element.
+    if parent_elem.tag == panel_name:
+        panel_elem = parent_elem
+    else:
+        panel_elem = ET.SubElement(parent_elem, panel_name)
+
     if orientation and panel_name == "StackPanel":
         panel_elem.set("Orientation", orientation)
 
     for child in control.children:
         child_elem = _create_element(child, panel_elem, panel_name)
-        # Recursively render if container
+        _set_text(child, child_elem)
         if child.children:
             _render_container(child, child_elem, decisions)
-        else:
-            _set_content(child, child_elem)
 
 
 def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -> ET.Element:
@@ -104,18 +106,29 @@ def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -
     return elem
 
 
-def _set_content(child: Control, elem: ET.Element) -> None:
-    """Set content/text for leaf element."""
-    if child.text is not None:
-        t = child.text
-        # Map common types
-        short = _get_wpf_short_type(child.type_name)
-        if short in ("Label", "Button", "CheckBox", "RadioButton", "GroupBox"):
-            elem.set("Content", t)
-        elif short in ("TextBox"):
-            elem.set("Text", t)
-        else:
-            elem.set("Content", t)
+# WPF property that carries WinForms Text for each kind of element. GroupBox is
+# a HeaderedContentControl, so its text belongs on Header, never Content.
+_HEADER_TYPES = frozenset(("GroupBox", "TabItem", "TabPage"))
+_CONTENT_TYPES = frozenset(("Label", "Button", "CheckBox", "RadioButton", "ToggleButton"))
+_TEXT_TYPES = frozenset(("TextBox",))
+
+
+def _set_text(child: Control, elem: ET.Element) -> None:
+    """Set the text-carrying property for leaf and container elements alike.
+
+    Container controls (e.g. a GroupBox wrapping a panel) keep their header;
+    elements with no WPF text property (panels, layout containers) are skipped
+    instead of receiving an invalid attribute.
+    """
+    if child.text is None:
+        return
+    short = _get_wpf_short_type(child.type_name)
+    if short in _HEADER_TYPES:
+        elem.set("Header", child.text)
+    elif short in _CONTENT_TYPES:
+        elem.set("Content", child.text)
+    elif short in _TEXT_TYPES:
+        elem.set("Text", child.text)
 
 
 def _get_wpf_short_type(winforms_type: str) -> str:
