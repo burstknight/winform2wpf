@@ -20,6 +20,8 @@
 
 ### [Fixed]
 
+- Parser now supports modern .NET designer files that omit the `this.` qualifier (control/form property assignments and `Controls.Add`); previously such files silently produced an empty `<Window />` with zero children
+
 ### [Security]
 
 ### [Removed]

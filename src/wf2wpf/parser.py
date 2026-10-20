@@ -149,10 +149,13 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
         ctrl = Control(name=cname, type_name=ftype)
         tree.add_control(ctrl)
 
-    # Property assignments: this.name.Property = ...
+    # Property assignments: "this.name.Property = ..." (classic designer) or
+    # "name.Property = ..." (modern .NET designer omits the "this." qualifier).
+    # Anchored to line starts so a form-level "Text = ..." can never be matched
+    # as "name.Property" and vice versa.
     prop_re = re.compile(
-        r"this\.(\w+)\.(\w+)\s*=\s*([^;]+);",
-        re.IGNORECASE,
+        r"^[ \t]*(?:this\.)?(\w+)\.(\w+)\s*=\s*([^;]+);",
+        re.IGNORECASE | re.MULTILINE,
     )
     for m in prop_re.finditer(content):
         cname = m.group(1)
@@ -189,10 +192,12 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                 except Exception:
                     pass
 
-    # Form-level properties: this.Property = ...
+    # Form-level properties: "this.Property = ..." or "Property = ..." (modern
+    # style). The line anchor is essential: without it, an indented
+    # "groupBox1.Text = "24";" would match as form-level "Text = ...".
     formprop_re = re.compile(
-        r"this\.(\w+)\s*=\s*([^;]+);",
-        re.IGNORECASE,
+        r"^[ \t]*(?:this\.)?(\w+)\s*=\s*([^;]+);",
+        re.IGNORECASE | re.MULTILINE,
     )
     for m in formprop_re.finditer(content):
         prop = m.group(1)
@@ -208,20 +213,25 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                     root.text = qv
 
     # Add controls
+    # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern).
+    # Anchored so the form-level "Controls.Add(x)" form below never matches
+    # as a child control named "Controls".
     add_re = re.compile(
-        r"this\.(\w+)\.Controls\.Add\(this\.(\w+)\)",
-        re.IGNORECASE,
+        r"^[ \t]*(?:this\.)?(\w+)\.Controls\.Add\(\s*(?:this\.)?(\w+)\s*\)",
+        re.IGNORECASE | re.MULTILINE,
     )
     for m in add_re.finditer(content):
         parent = m.group(1)
+        if parent == "this":  # form-level "this.Controls.Add(this.x)" line
+            continue
         child = m.group(2)
         c = tree.get_control(child)
         if c:
             c.parent_name = parent
 
     addroot_re = re.compile(
-        r"this\.Controls\.Add\(this\.(\w+)\)",
-        re.IGNORECASE,
+        r"^[ \t]*(?:this\.)?Controls\.Add\(\s*(?:this\.)?(\w+)\s*\)",
+        re.IGNORECASE | re.MULTILINE,
     )
     for m in addroot_re.finditer(content):
         child = m.group(1)

@@ -56,3 +56,58 @@ def test_parse_big5_designer_preserves_chinese():
         assert tree.root is not None
         assert tree.root.text == "程式入口"
         assert tree.get_control("label1").text == "登入"
+
+
+def test_parse_modern_style_without_this_qualifier():
+    """Modern designer files that omit `this.` must parse identically."""
+    fixture = get_fixture_path("07_modern_style.Designer.cs")
+    tree = parse_designer_cs(fixture)
+
+    # Form-level properties
+    assert tree.root is not None
+    assert tree.root.text == "現代風格表單"
+    assert tree.root.name == "Form7"
+
+    # Control properties
+    group = tree.get_control("groupBox1")
+    assert group is not None
+    assert group.text == "站號"
+    assert group.location_x == 12.0
+    assert group.location_y == 12.0
+    assert group.size_w == 280.0
+    assert group.size_h == 120.0
+
+    button = tree.get_control("button1")
+    assert button is not None
+    assert button.text == "送出"
+    assert button.location_x == 20.0
+
+    # Hierarchy: form -> group box -> button/label
+    assert group.parent_name == "Form7"
+    assert button.parent_name == "groupBox1"
+    assert tree.get_control("label1").parent_name == "groupBox1"
+
+    assert tree.root.children == [group]
+    assert [c.name for c in group.children] == ["button1", "label1"]
+
+
+def test_parse_modern_style_does_not_misread_control_text_as_form_text():
+    """A control-level `Text = ...` line must never become the form title."""
+    designer = (
+        "partial class Form1\n"
+        "{\n"
+        "    private void InitializeComponent()\n"
+        "    {\n"
+        "        button1 = new Button();\n"
+        '        button1.Text = "按鈕";\n'
+        '        Text = "表單";\n'
+        "    }\n"
+        "    private Button button1;\n"
+        "}\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "Form1.Designer.cs"
+        p.write_text(designer, encoding="utf-8")
+        tree = parse_designer_cs(p)
+        assert tree.root.text == "表單"
+        assert tree.get_control("button1").text == "按鈕"

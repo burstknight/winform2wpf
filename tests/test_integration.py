@@ -81,3 +81,23 @@ def test_integration_nested_panel():
     xaml = render_xaml(tree, decisions)
     assert "<Window" in xaml
     ET.fromstring(xaml)
+
+
+def test_integration_modern_style():
+    """Modern this-less designer files must render a full tree, not an empty window."""
+    fixture = get_fixture_path("07_modern_style.Designer.cs")
+    tree = parse_designer_cs(fixture)
+    decisions = analyze_tree(tree)
+    xaml = render_xaml(tree, decisions)
+
+    assert "Title=\"現代風格表單\"" in xaml
+    assert "x:Name=\"groupBox1\"" in xaml
+    assert "x:Name=\"button1\"" in xaml
+    assert "x:Name=\"label1\"" in xaml
+    assert "Content=\"送出\"" in xaml
+
+    root = ET.fromstring(xaml)
+    names = [elem.get("{http://schemas.microsoft.com/winfx/2006/xaml}Name") for elem in root.iter()]
+    assert "groupBox1" in names
+    assert "button1" in names
+    assert "label1" in names
