@@ -12,11 +12,13 @@
 - Packaging via `pyproject.toml` with hatchling build backend (uv + pytest support, future `uvx` compatibility)
 - Source file encoding detection (BOM → strict UTF-8 → Big5 → CP950) in `wf2wpf.io`, with a unified `TextFileReader`; `parse_designer_cs` now auto-detects non-UTF-8 (e.g. Big5/CP950) `Designer.cs` files so Chinese literals are no longer corrupted
 - `convert` encoding options: `--src-encoding`, `--encoding-fallbacks`, `--encoding-map` (glob overrides), and `--encoding-report`
+- Golden-file comparison test: every fixture in `tests/fixtures/` is rendered and compared against `tests/expected/`; the goldens were regenerated to the current output (window dimensions, absolute-layout margins, Grid cell definitions) and a golden was added for `07_modern_style`
 
 ### [Changed]
 
 - Rendered XAML is now pretty-printed with tab indentation instead of a single line; golden files in `tests/expected/` reformatted the same way (content unchanged)
 - `.editorconfig` now enforces tab indentation for `*.xaml`
+- XAML files written by `render_xaml`/the CLI now end with a final newline, as required by `.editorconfig` (`insert_final_newline`)
 
 ### [Fixed]
 

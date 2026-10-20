@@ -58,7 +58,8 @@ def render_xaml(
     xml_str = ET.tostring(root_elem, encoding="unicode", xml_declaration=False)
 
     if output_path:
-        Path(output_path).write_text(xml_str, encoding="utf-8", newline="\n")
+        # Final newline per .editorconfig insert_final_newline.
+        Path(output_path).write_text(xml_str + "\n", encoding="utf-8", newline="\n")
 
     return xml_str
 

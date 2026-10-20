@@ -3,11 +3,27 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 from wf2wpf.analyzer import analyze_tree
 from wf2wpf.parser import parse_designer_cs
 from wf2wpf.renderer import render_xaml
 from tests.conftest import get_fixture_path, get_expected_path
+
+
+def test_rendered_xaml_matches_golden_files():
+    """Every fixture must render exactly to its golden file in tests/expected/."""
+    fixtures_dir = Path(__file__).resolve().parent / "fixtures"
+    fixtures = sorted(fixtures_dir.glob("*.Designer.cs"))
+    assert fixtures, "no fixtures found"
+    for fixture in fixtures:
+        name = fixture.name.replace(".Designer.cs", "")
+        golden = get_expected_path(f"{name}.xaml")
+        assert golden.exists(), f"missing golden file for {name}"
+        tree = parse_designer_cs(fixture)
+        xaml = render_xaml(tree, analyze_tree(tree))
+        expected = golden.read_text(encoding="utf-8")
+        assert xaml + "\n" == expected, f"rendered XAML drifted from golden: {name}"
 
 
 def test_integration_simple_form():

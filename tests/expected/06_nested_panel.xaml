@@ -1,7 +1,9 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form6" Title="Nested">
-	<StackPanel x:Name="outerPanel">
-		<StackPanel x:Name="innerPanel">
-			<Button x:Name="button1" Content="Nested" />
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form6" Title="Nested" Width="284" Height="174">
+	<StackPanel Orientation="Vertical">
+		<StackPanel x:Name="outerPanel" Orientation="Vertical">
+			<StackPanel x:Name="innerPanel" Orientation="Vertical">
+				<Button x:Name="button1" Content="Nested" />
+			</StackPanel>
 		</StackPanel>
 	</StackPanel>
 </Window>
