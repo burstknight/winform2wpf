@@ -64,6 +64,42 @@ def render_xaml(
     return xml_str
 
 
+def _is_fill_dock(control: Control) -> bool:
+    """Whether a control uses WinForms ``DockStyle.Fill``."""
+    return (control.dock or "").strip().lower() == "fill"
+
+
+def _ordered_children(control: Control, panel_name: str) -> list[Control]:
+    """Order children so that DockPanel fill semantics match WinForms.
+
+    WinForms applies docking in z-order and a ``DockStyle.Fill`` control eats
+    the remaining space of its parent. WPF has no ``Fill`` member in its
+    ``Dock`` enum; instead ``DockPanel.LastChildFill`` (True by default) gives
+    the remaining space to the *last* child. Moving fill children to the end
+    therefore reproduces the WinForms result.
+    """
+    if panel_name != "DockPanel":
+        return list(control.children)
+    fills = [c for c in control.children if _is_fill_dock(c)]
+    others = [c for c in control.children if not _is_fill_dock(c)]
+    return others + fills
+
+
+def _apply_last_child_fill(children: list[Control], panel_elem: ET.Element) -> None:
+    """Keep an explicit Dock on the last child of a DockPanel.
+
+    ``DockPanel.LastChildFill`` defaults to True, which overrides the Dock
+    value of the last child: it fills the remaining space instead of docking.
+    When the last child is not a fill child it keeps an explicit Dock, so the
+    fill behaviour has to be switched off.
+    """
+    if not children:
+        return
+    if _is_fill_dock(children[-1]):
+        return
+    panel_elem.set("LastChildFill", "False")
+
+
 def _render_container(
     control: Control, parent_elem: ET.Element, decisions: dict[str, dict[str, Any]]
 ) -> None:
@@ -98,11 +134,15 @@ def _render_container(
     if panel_elem.tag == "Grid":
         _add_grid_definitions(control, panel_elem)
 
-    for child in control.children:
+    children = _ordered_children(control, panel_name)
+    for child in children:
         child_elem = _create_element(child, panel_elem, panel_name)
         _set_text(child, child_elem)
         if child.children:
             _render_container(child, child_elem, decisions)
+
+    if panel_name == "DockPanel":
+        _apply_last_child_fill(children, panel_elem)
 
 
 def _add_grid_definitions(control: Control, panel_elem: ET.Element) -> None:
@@ -144,7 +184,7 @@ def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -
     elem = ET.SubElement(parent_panel, child_type)
     if child.name:
         elem.set("x:Name", child.name)
-    if child.dock and panel_name == "DockPanel":
+    if child.dock and panel_name == "DockPanel" and not _is_fill_dock(child):
         elem.set("DockPanel.Dock", child.dock)
     if panel_name == "Grid":
         # TableLayoutPanel cell placement; ignored when unset (absolute layout).

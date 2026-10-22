@@ -2,6 +2,6 @@
 	<DockPanel>
 		<StackPanel x:Name="panelTop" DockPanel.Dock="Top" />
 		<StackPanel x:Name="panelLeft" DockPanel.Dock="Left" />
-		<StackPanel x:Name="panelMain" DockPanel.Dock="Fill" />
+		<StackPanel x:Name="panelMain" />
 	</DockPanel>
 </Window>

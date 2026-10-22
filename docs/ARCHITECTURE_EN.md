@@ -82,7 +82,7 @@ Mappings (representative):
 - `TextBox.Text` → `Text`
 - `Enabled` → `IsEnabled`
 - `Visible` → `Visibility` (`true/false` → `Visible/Collapsed`)
-- `Dock` → `DockPanel.Dock`
+- `Dock` → `DockPanel.Dock` (`DockStyle.Fill` has no WPF counterpart, see below)
 - `TabIndex` → `TabIndex`
 
 Rules sourced from `rules.yaml` where practical.
@@ -95,6 +95,7 @@ Requirements:
 - Required namespaces: `xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"` and `xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"`
 - Root: `Window` for Form (include `Title`, `x:Name` if present)
 - For each container emit correct panel and attach layout-specific attributes to children
+- Map WinForms `DockStyle.Fill` to the WPF fill semantics: the WPF `Dock` enum has no `Fill` member, so the child is emitted without a `Dock` attribute and moved to the end of the `DockPanel`, where `DockPanel.LastChildFill` (True by default) gives it the remaining space. When the last child keeps an explicit `Dock`, `LastChildFill="False"` is emitted so that value is honoured
 - Use `xml.etree.ElementTree` to build and validate XML structure
 - Output well-formed XAML text
 

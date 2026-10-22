@@ -81,7 +81,7 @@ winform2wpf/
 - `TextBox.Text` → `Text`
 - `Enabled` → `IsEnabled`
 - `Visible` → `Visibility`（`true/false` 對應 `Visible/Collapsed`）
-- `Dock` → `DockPanel.Dock`
+- `Dock` → `DockPanel.Dock`（`DockStyle.Fill` 在 WPF 沒有對應值，詳見下方說明）
 - `TabIndex` → `TabIndex`
 
 對應規則儘量集中於 `rules.yaml` 管理。
@@ -94,6 +94,7 @@ winform2wpf/
 - 必要命名空間：`xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"`、`xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"`
 - 根元素：Form 對應 `<Window>`（可包含 `Title`、`x:Name` 等）
 - 依容器推斷結果產生對應 Panel，並正確附加版面屬性（`DockPanel.Dock`、`Grid.Row/Grid.Column` 等）
+- 將 WinForms `DockStyle.Fill` 轉為 WPF 的填滿語意：WPF 的 `Dock` 列舉沒有 `Fill` 成員，因此該子元素不輸出 `Dock` 屬性，並移到 `DockPanel` 的最後一個位置，由 `DockPanel.LastChildFill`（預設 `True`）填滿剩餘空間；若最後一個子元素帶有明確的 `Dock`，則輸出 `LastChildFill="False"` 以保留該值
 - 使用 `xml.etree.ElementTree` 建構與驗證 XML 結構
 - 輸出格式正確的 XAML 文字
 

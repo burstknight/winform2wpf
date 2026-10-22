@@ -29,6 +29,7 @@
 - Renderer emits `RowDefinitions`/`ColumnDefinitions` and the `Grid.Row`/`Grid.Column` attached properties for `TableLayoutPanel` grids (percent styles map to equal star sizes); previously all cells collapsed into a single overlapping cell
 - Analyzer now separates vertical linear chains from layouts scattered on both axes: scattered containers infer a `Grid` (the priority its docstring already promised) instead of a vertical `StackPanel` that reflowed absolute layouts
 - Absolute layout fidelity: children of layout `Grid`s keep their WinForms `Location`/`Size` as `HorizontalAlignment`/`VerticalAlignment` + `Margin` + `Width`/`Height`, and the form `ClientSize` becomes the WPF `Window` `Width`/`Height`; parsed `Location`/`Size` data was previously discarded by the renderer
+- Renderer no longer emits the invalid `DockPanel.Dock="Fill"`: WPF's `Dock` enum has no `Fill` member, so Visual Studio reported `XAML0431` for every occurrence and the generated window failed to load. WinForms `DockStyle.Fill` children are now emitted without a `Dock` attribute and moved to the end of the `DockPanel`, where `DockPanel.LastChildFill` (True by default) gives them the remaining space; `DockPanel.LastChildFill="False"` is emitted when the last child keeps an explicit `Dock`
 
 ### [Security]
 

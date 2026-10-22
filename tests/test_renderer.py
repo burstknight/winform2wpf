@@ -245,3 +245,69 @@ def test_render_window_dimensions_from_client_size():
     assert 'Width="800"' in xaml
     assert 'Height="600"' in xaml
     ET.fromstring(xaml)
+
+
+def _xaml_name(elem: ET.Element) -> str | None:
+    """Read the x:Name attribute of a rendered element."""
+    return elem.get("{http://schemas.microsoft.com/winfx/2006/xaml}Name")
+
+
+def _dock_panel(xaml: str) -> ET.Element:
+    """Return the DockPanel element of a rendered XAML document."""
+    doc = ET.fromstring(xaml)
+    local = lambda tag: tag.rsplit("}", 1)[-1]
+    return next(e for e in doc.iter() if local(e.tag) == "DockPanel")
+
+
+def test_render_dockstyle_fill_is_not_emitted_as_dock_value():
+    """WPF's Dock enum has no Fill member, so the value must not be emitted."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(name="panel1", type_name="System.Windows.Forms.Panel")
+    fill = Control(
+        name="panelMain", type_name="System.Windows.Forms.Panel", dock="Fill"
+    )
+    panel.children.append(fill)
+    root.children.append(panel)
+    tree = _build_tree(root, [panel, fill])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert 'DockPanel.Dock="Fill"' not in xaml
+    assert "DockPanel.Dock=" not in xaml
+
+
+def test_render_dockstyle_fill_child_is_moved_to_the_end():
+    """The fill child must be last: DockPanel gives the rest of the space to it."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(name="panel1", type_name="System.Windows.Forms.Panel")
+    fill = Control(
+        name="panelMain", type_name="System.Windows.Forms.Panel", dock="Fill"
+    )
+    bottom = Control(
+        name="panelBottom", type_name="System.Windows.Forms.Panel", dock="Bottom"
+    )
+    panel.children.extend([fill, bottom])
+    root.children.append(panel)
+    tree = _build_tree(root, [panel, fill, bottom])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    dock_panel = _dock_panel(xaml)
+    assert [_xaml_name(child) for child in dock_panel] == ["panelBottom", "panelMain"]
+    assert dock_panel.get("LastChildFill") is None
+
+
+def test_render_dockpanel_disables_last_child_fill_for_explicit_dock():
+    """An explicit Dock on the last child must not be overridden by LastChildFill."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(name="panel1", type_name="System.Windows.Forms.Panel")
+    top = Control(name="panelTop", type_name="System.Windows.Forms.Panel", dock="Top")
+    bottom = Control(
+        name="panelBottom", type_name="System.Windows.Forms.Panel", dock="Bottom"
+    )
+    panel.children.extend([top, bottom])
+    root.children.append(panel)
+    tree = _build_tree(root, [panel, top, bottom])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    dock_panel = _dock_panel(xaml)
+    assert dock_panel.get("LastChildFill") == "False"
+    assert [_xaml_name(child) for child in dock_panel] == ["panelTop", "panelBottom"]
