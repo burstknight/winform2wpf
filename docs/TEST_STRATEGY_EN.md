@@ -35,6 +35,7 @@ Golden files in `tests/expected/` represent the expected XAML structure per case
 - `tests/test_mapper.py`: Type/property mappings (Text→Content, x:Name, Visibility/IsEnabled, Dock)
 - `tests/test_renderer.py`: Namespaces, root element, panel types, nesting, layout attributes, XML parseability
 - `tests/test_integration.py`: End-to-end against golden files (structural assertions)
+- `tests/test_xaml_load.py`: Parses the golden XAML with the real WPF parser (`System.Windows.Markup.XamlReader`, run through Windows PowerShell 5.1); skipped when PowerShell or the WPF assemblies are unavailable
 - `tests/conftest.py`: Shared fixtures/helpers (load fixtures/expected, temp paths)
 
 ## Golden File Approach

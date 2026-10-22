@@ -35,6 +35,7 @@
 - `tests/test_mapper.py`：型別與屬性對應（Text→Content、x:Name、Visibility/IsEnabled、Dock）
 - `tests/test_renderer.py`：命名空間、根元素、Panel 類型、巢狀結構、版面屬性、XML 可解析性
 - `tests/test_integration.py`：端對端測試，針對 Golden File 進行結構性比對
+- `tests/test_xaml_load.py`：以真正的 WPF 解析器（透過 Windows PowerShell 5.1 呼叫 `System.Windows.Markup.XamlReader`）解析 Golden XAML；缺少 PowerShell 或 WPF 組件時自動略過
 - `tests/conftest.py`：共用 fixture 與輔助函式（載入 fixtures/expected、暫存路徑等）
 
 ## Golden File 比對原則

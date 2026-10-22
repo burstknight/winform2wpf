@@ -13,6 +13,7 @@
 - Source file encoding detection (BOM → strict UTF-8 → Big5 → CP950) in `wf2wpf.io`, with a unified `TextFileReader`; `parse_designer_cs` now auto-detects non-UTF-8 (e.g. Big5/CP950) `Designer.cs` files so Chinese literals are no longer corrupted
 - `convert` encoding options: `--src-encoding`, `--encoding-fallbacks`, `--encoding-map` (glob overrides), and `--encoding-report`
 - Golden-file comparison test: every fixture in `tests/fixtures/` is rendered and compared against `tests/expected/`; the goldens were regenerated to the current output (window dimensions, absolute-layout margins, Grid cell definitions) and a golden was added for `07_modern_style`
+- Load-time test that parses the golden XAML with the real WPF parser (`System.Windows.Markup.XamlReader`, run through Windows PowerShell 5.1); the test is skipped when PowerShell or the WPF assemblies are unavailable
 
 ### [Changed]
 
