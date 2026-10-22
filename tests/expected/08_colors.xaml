@@ -1,0 +1,13 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form8" Title="Colors" Width="360" Height="260">
+	<DockPanel>
+		<GroupBox x:Name="groupBox1" DockPanel.Dock="Top" Foreground="#FF008000" Header="Group">
+			<StackPanel Orientation="Vertical">
+				<RadioButton x:Name="radioButton1" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Content="Option" />
+				<Label x:Name="label1" Foreground="#FF008000" Content="Inherited label" />
+			</StackPanel>
+		</GroupBox>
+		<StackPanel x:Name="panel1" Background="#FFD3D3D3" Orientation="Vertical">
+			<Button x:Name="button1" Foreground="#FFFF0000" Content="OK" />
+		</StackPanel>
+	</DockPanel>
+</Window>

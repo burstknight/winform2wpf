@@ -311,3 +311,142 @@ def test_render_dockpanel_disables_last_child_fill_for_explicit_dock():
     dock_panel = _dock_panel(xaml)
     assert dock_panel.get("LastChildFill") == "False"
     assert [_xaml_name(child) for child in dock_panel] == ["panelTop", "panelBottom"]
+
+
+def _element(xaml: str, name: str) -> ET.Element:
+    """Return the element with the given x:Name."""
+    doc = ET.fromstring(xaml)
+    return next(
+        e
+        for e in doc.iter()
+        if _xaml_name(e) == name
+    )
+
+
+def test_render_forecolor_becomes_foreground():
+    """The WinForms ForeColor of a control becomes the WPF Foreground."""
+    root = Control(name="Form1", type_name="Form")
+    group = Control(
+        name="groupBox1",
+        type_name="System.Windows.Forms.GroupBox",
+        fore_color="Color.Green",
+    )
+    root.children.append(group)
+    tree = _build_tree(root, [group])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "groupBox1").get("Foreground") == "#FF008000"
+
+
+def test_render_system_color_becomes_dynamic_resource():
+    """A system colour keeps following the Windows theme."""
+    root = Control(name="Form1", type_name="Form")
+    radio = Control(
+        name="radioButton1",
+        type_name="System.Windows.Forms.RadioButton",
+        fore_color="SystemColors.ControlText",
+    )
+    root.children.append(radio)
+    tree = _build_tree(root, [radio])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "radioButton1").get("Foreground") == (
+        "{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+    )
+
+
+def test_render_forecolor_is_inherited_by_children():
+    """Children without their own colour take the colour of their container."""
+    root = Control(name="Form1", type_name="Form")
+    group = Control(
+        name="groupBox1",
+        type_name="System.Windows.Forms.GroupBox",
+        fore_color="Color.Green",
+    )
+    label = Control(
+        name="label1",
+        type_name="System.Windows.Forms.Label",
+        text="Inherited",
+    )
+    group.children.append(label)
+    root.children.append(group)
+    tree = _build_tree(root, [group, label])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "label1").get("Foreground") == "#FF008000"
+
+
+def test_render_own_color_wins_over_the_inherited_one():
+    """A control with its own colour keeps it instead of the inherited one."""
+    root = Control(name="Form1", type_name="Form")
+    group = Control(
+        name="groupBox1",
+        type_name="System.Windows.Forms.GroupBox",
+        fore_color="Color.Green",
+    )
+    label = Control(
+        name="label1",
+        type_name="System.Windows.Forms.Label",
+        text="Own",
+        fore_color="Color.Red",
+    )
+    group.children.append(label)
+    root.children.append(group)
+    tree = _build_tree(root, [group, label])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "label1").get("Foreground") == "#FFFF0000"
+
+
+def test_render_panel_has_no_foreground_but_its_children_do():
+    """WPF panels have no Foreground: the colour goes to the children."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(
+        name="panel1",
+        type_name="System.Windows.Forms.Panel",
+        fore_color="Color.Red",
+    )
+    button = Control(
+        name="button1",
+        type_name="System.Windows.Forms.Button",
+        text="OK",
+    )
+    panel.children.append(button)
+    root.children.append(panel)
+    tree = _build_tree(root, [panel, button])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "panel1").get("Foreground") is None
+    assert _element(xaml, "button1").get("Foreground") == "#FFFF0000"
+
+
+def test_render_backcolor_becomes_background():
+    """The WinForms BackColor of a control becomes the WPF Background."""
+    root = Control(name="Form1", type_name="Form")
+    panel = Control(
+        name="panel1",
+        type_name="System.Windows.Forms.Panel",
+        back_color="Color.LightGray",
+    )
+    root.children.append(panel)
+    tree = _build_tree(root, [panel])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    assert _element(xaml, "panel1").get("Background") == "#FFD3D3D3"
+
+
+def test_render_form_level_color_applies_to_the_window():
+    """A form level colour belongs to the root Window."""
+    root = Control(
+        name="Form1",
+        type_name="Form",
+        fore_color="Color.Red",
+        back_color="Color.White",
+    )
+    tree = _build_tree(root, [])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    doc = ET.fromstring(xaml)
+    window = doc
+    assert window.get("Foreground") == "#FFFF0000"
+    assert window.get("Background") == "#FFFFFFFF"

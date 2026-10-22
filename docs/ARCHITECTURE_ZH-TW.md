@@ -82,9 +82,18 @@ winform2wpf/
 - `Enabled` → `IsEnabled`
 - `Visible` → `Visibility`（`true/false` 對應 `Visible/Collapsed`）
 - `Dock` → `DockPanel.Dock`（`DockStyle.Fill` 在 WPF 沒有對應值，詳見下方說明）
+- `ForeColor` → `Foreground`（`#AARRGGBB`；`SystemColors.*` 則改用對應系統筆刷的 `DynamicResource`）
+- `BackColor` → `Background`
 - `TabIndex` → `TabIndex`
 
 對應規則儘量集中於 `rules.yaml` 管理。
+
+### styles.py
+
+職責：將 WinForms 色彩運算式轉換成 WPF 可用的值。
+
+- `to_wpf_brush()`：色彩運算式（`Color.Green`、`Color.FromArgb(...)`、`SystemColors.ControlText`）轉成 WPF 筆刷值；具名色沿用 .NET 的精確數值，系統色則指向 WPF 系統筆刷，維持跟隨 Windows 佈景主題
+- 無法翻譯的運算式不會產生任何值，也不會臆測
 
 ### renderer.py
 
@@ -95,6 +104,7 @@ winform2wpf/
 - 根元素：Form 對應 `<Window>`（可包含 `Title`、`x:Name` 等）
 - 依容器推斷結果產生對應 Panel，並正確附加版面屬性（`DockPanel.Dock`、`Grid.Row/Grid.Column` 等）
 - 將 WinForms `DockStyle.Fill` 轉為 WPF 的填滿語意：WPF 的 `Dock` 列舉沒有 `Fill` 成員，因此該子元素不輸出 `Dock` 屬性，並移到 `DockPanel` 的最後一個位置，由 `DockPanel.LastChildFill`（預設 `True`）填滿剩餘空間；若最後一個子元素帶有明確的 `Dock`，則輸出 `LastChildFill="False"` 以保留該值
+- 沿著樹往下傳遞 WinForms 的 `ForeColor` 繼承：沒有自訂顏色的子元素沿用父容器的顏色，因為 WPF 佈景主題會在多數控制項上直接設定 `Foreground`，繼承的顏色否則永遠傳不到。WPF 的 Panel 沒有 `Foreground`，因此由其子元素承接這個顏色
 - 使用 `xml.etree.ElementTree` 建構與驗證 XML 結構
 - 輸出格式正確的 XAML 文字
 

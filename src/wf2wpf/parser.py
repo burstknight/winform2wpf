@@ -32,6 +32,8 @@ class Control:
         text: Text/Content value.
         enabled: Enabled flag.
         visible: Visible flag.
+        fore_color: Raw ForeColor expression (e.g. "Color.Green").
+        back_color: Raw BackColor expression.
         column: Column index for TableLayoutPanel.
         row: Row index for TableLayoutPanel.
         column_span: Column span.
@@ -59,6 +61,8 @@ class Control:
     text: Optional[str] = None
     enabled: Optional[bool] = None
     visible: Optional[bool] = None
+    fore_color: Optional[str] = None
+    back_color: Optional[str] = None
     column: Optional[int] = None
     row: Optional[int] = None
     column_span: Optional[int] = None
@@ -191,6 +195,10 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                     ctrl.size_h = float(s.group(2).strip())
                 except Exception:
                     pass
+        elif pl == "forecolor":
+            ctrl.fore_color = val
+        elif pl == "backcolor":
+            ctrl.back_color = val
         elif pl in ("columncount", "rowcount"):
             n = re.match(r"\d+", val)
             if n:
@@ -228,6 +236,12 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
                         root.size_h = float(s.group(2).strip())
                     except Exception:
                         pass
+        elif pl == "forecolor":
+            if root:
+                root.fore_color = val
+        elif pl == "backcolor":
+            if root:
+                root.back_color = val
 
     # Add controls
     # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern),

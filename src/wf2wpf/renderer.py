@@ -3,10 +3,37 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from wf2wpf.parser import Control, ControlTree
+from wf2wpf.styles import to_wpf_brush
+
+
+@dataclass
+class ElementStyle:
+    """Effective appearance of an element and the values it hands down.
+
+    WinForms hands ``ForeColor`` down to the children that do not set their
+    own value. WPF does not: the theme styles of most controls define
+    ``Foreground`` themselves, so the inherited colour never reaches them.
+    The renderer therefore carries the effective value down the tree and
+    writes it on every element.
+    """
+
+    foreground: Optional[str] = None
+
+
+def _style_of(control: Control) -> ElementStyle:
+    """Build the style a control declares itself."""
+    return ElementStyle(foreground=to_wpf_brush(control.fore_color))
+
+
+def _merge_style(inherited: ElementStyle, own: ElementStyle) -> ElementStyle:
+    """Combine the inherited style with the one a control declares itself."""
+    foreground = own.foreground if own.foreground is not None else inherited.foreground
+    return ElementStyle(foreground=foreground)
 
 
 def render_xaml(
@@ -45,9 +72,18 @@ def render_xaml(
         if tree.root.size_h is not None:
             root_elem.set("Height", _num(tree.root.size_h))
 
+    root_style = ElementStyle()
+    if tree.root:
+        root_style = _style_of(tree.root)
+        background = to_wpf_brush(tree.root.back_color)
+        if background:
+            root_elem.set("Background", background)
+        if root_style.foreground:
+            root_elem.set("Foreground", root_style.foreground)
+
     # Render children of root
     if tree.root:
-        _render_container(tree.root, root_elem, decisions)
+        _render_container(tree.root, root_elem, decisions, root_style)
 
     # Register namespaces for clean output
     ET.register_namespace("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")
@@ -101,7 +137,10 @@ def _apply_last_child_fill(children: list[Control], panel_elem: ET.Element) -> N
 
 
 def _render_container(
-    control: Control, parent_elem: ET.Element, decisions: dict[str, dict[str, Any]]
+    control: Control,
+    parent_elem: ET.Element,
+    decisions: dict[str, dict[str, Any]],
+    style: ElementStyle,
 ) -> None:
     """Render a container's children with inferred panel."""
     if not control.children:
@@ -136,10 +175,11 @@ def _render_container(
 
     children = _ordered_children(control, panel_name)
     for child in children:
-        child_elem = _create_element(child, panel_elem, panel_name)
+        child_style = _merge_style(style, _style_of(child))
+        child_elem = _create_element(child, panel_elem, panel_name, child_style)
         _set_text(child, child_elem)
         if child.children:
-            _render_container(child, child_elem, decisions)
+            _render_container(child, child_elem, decisions, child_style)
 
     if panel_name == "DockPanel":
         _apply_last_child_fill(children, panel_elem)
@@ -178,7 +218,12 @@ def _num(value: float) -> str:
     return f"{value:g}"
 
 
-def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -> ET.Element:
+def _create_element(
+    child: Control,
+    parent_panel: ET.Element,
+    panel_name: str,
+    style: ElementStyle,
+) -> ET.Element:
     """Create XAML element for child control."""
     child_type = _get_wpf_short_type(child.type_name)
     elem = ET.SubElement(parent_panel, child_type)
@@ -208,7 +253,29 @@ def _create_element(child: Control, parent_panel: ET.Element, panel_name: str) -
                 elem.set("Width", _num(child.size_w))
             if child.size_h is not None:
                 elem.set("Height", _num(child.size_h))
+    _set_appearance(child, elem, child_type, style)
     return elem
+
+
+# WPF panels have a Background but no Foreground: the colour of such a
+# container is inherited by its children.
+_PANEL_TYPES = frozenset(("Grid", "StackPanel", "DockPanel", "WrapPanel", "Canvas"))
+
+
+def _set_appearance(
+    child: Control,
+    elem: ET.Element,
+    child_type: str,
+    style: ElementStyle,
+) -> None:
+    """Apply the colour properties of a control to its element."""
+    background = to_wpf_brush(child.back_color)
+    if background:
+        elem.set("Background", background)
+    if child_type in _PANEL_TYPES:
+        return
+    if style.foreground:
+        elem.set("Foreground", style.foreground)
 
 
 # WPF property that carries WinForms Text for each kind of element. GroupBox is

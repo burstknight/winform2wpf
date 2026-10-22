@@ -184,3 +184,40 @@ def test_parse_classic_client_size():
     assert tree.root is not None
     assert tree.root.size_w == 284.0
     assert tree.root.size_h == 54.0
+
+
+def test_parse_control_colors_and_font():
+    """ForeColor, BackColor and Font are captured as raw expressions."""
+    fixture = get_fixture_path("08_colors.Designer.cs")
+    tree = parse_designer_cs(fixture)
+    group = tree.get_control("groupBox1")
+    assert group is not None
+    assert group.fore_color == "System.Drawing.Color.Green"
+    panel = tree.get_control("panel1")
+    assert panel is not None
+    assert panel.back_color == "System.Drawing.Color.LightGray"
+    radio = tree.get_control("radioButton1")
+    assert radio is not None
+    assert radio.fore_color == "System.Drawing.SystemColors.ControlText"
+
+
+def test_parse_form_level_colors_and_font():
+    """Form level colours and fonts belong to the root control."""
+    designer = (
+        "partial class Form1\n"
+        "{\n"
+        "    private void InitializeComponent()\n"
+        "    {\n"
+        "        this.ForeColor = System.Drawing.Color.Red;\n"
+        "        this.BackColor = System.Drawing.Color.White;\n"
+        '        this.Font = new System.Drawing.Font("Arial", 10F);\n'
+        "    }\n"
+        "}\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "Form1.Designer.cs"
+        p.write_text(designer, encoding="utf-8")
+        tree = parse_designer_cs(p)
+        assert tree.root is not None
+        assert tree.root.fore_color == "System.Drawing.Color.Red"
+        assert tree.root.back_color == "System.Drawing.Color.White"
