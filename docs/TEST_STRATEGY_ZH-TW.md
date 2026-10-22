@@ -27,6 +27,7 @@
 | 06 | `06_nested_panel.Designer.cs` | 巢狀容器 | 每個容器各自獨立推斷 |
 | 07 | `07_modern_style.Designer.cs` | 不帶 `this.` 前綴的設計師檔 | 與傳統寫法結果相同 |
 | 08 | `08_colors.Designer.cs` | 群組與子項的 ForeColor/BackColor | `Foreground`/`Background` 與顏色繼承 |
+| 09 | `09_fonts.Designer.cs` | 字型大小與樣式 | `FontFamily`/`FontSize`/`FontWeight`/`FontStyle` |
 
 `tests/expected/` 存放各案例對應的預期 XAML 結構（Golden File）。
 
@@ -36,7 +37,7 @@
 - `tests/test_analyzer.py`：版面推斷規則（FlowLayout→WrapPanel、TableLayout→Grid、Dock→DockPanel、鏈狀→StackPanel、fallback→Grid）
 - `tests/test_mapper.py`：型別與屬性對應（Text→Content、x:Name、Visibility/IsEnabled、Dock）
 - `tests/test_renderer.py`：命名空間、根元素、Panel 類型、巢狀結構、版面屬性、XML 可解析性
-- `tests/test_styles.py`：色彩轉換（具名色、`Color.FromArgb`、系統色）
+- `tests/test_styles.py`：色彩與字型轉換（具名色、`Color.FromArgb`、系統色、字型家族／大小／樣式）
 - `tests/test_integration.py`：端對端測試，針對 Golden File 進行結構性比對
 - `tests/test_xaml_load.py`：以真正的 WPF 解析器（透過 Windows PowerShell 5.1 呼叫 `System.Windows.Markup.XamlReader`）解析 Golden XAML；缺少 PowerShell 或 WPF 組件時自動略過
 - `tests/conftest.py`：共用 fixture 與輔助函式（載入 fixtures/expected、暫存路徑等）

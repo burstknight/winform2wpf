@@ -1,8 +1,10 @@
-"""WinForms colour expressions translated into WPF values.
+"""WinForms colour and font expressions translated into WPF values.
 
-The WinForms designer stores colours as C# expressions (``Color.Green``,
-``System.Drawing.Color.FromArgb(...)``). This module turns those expressions
-into the brush values WPF understands for ``Foreground`` and ``Background``.
+The WinForms designer stores colours and fonts as C# expressions
+(``Color.Green``, ``System.Drawing.Color.FromArgb(...)``,
+``new Font("Microsoft JhengHei UI", 16F, ...)``). This module turns those
+expressions into the values WPF understands: a brush value for
+``Foreground``/``Background`` and a set of text properties for the font.
 """
 
 from __future__ import annotations
@@ -10,7 +12,7 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-__all__ = ["to_wpf_brush"]
+__all__ = ["to_wpf_brush", "to_wpf_font"]
 
 
 # The .NET known colours. Their names and values are identical to the WPF
@@ -197,9 +199,29 @@ SYSTEM_COLOR_BRUSHES: dict[str, str] = {
 }
 
 
+# WinForms measures a font in points (1/72 inch) while WPF measures
+# FontSize in device independent pixels (1/96 inch). The factors convert a
+# WinForms font unit into the WPF unit so that both render the same size.
+_UNIT_TO_DIP = {
+    "point": 96.0 / 72.0,
+    "pixel": 1.0,
+    "inch": 96.0,
+    "millimeter": 96.0 / 25.4,
+    "twip": 96.0 / 1440.0,
+    "display": 96.0 / 100.0,
+    "world": 1.0,
+}
+
+_FONT_RE = re.compile(
+    r"new\s+(?:System\.Drawing\.)?Font\s*\((?P<args>.*)\)\s*$",
+    re.DOTALL | re.IGNORECASE,
+)
 _SYSTEM_COLOR_RE = re.compile(r"^SystemColors\.(?P<name>\w+)$", re.IGNORECASE)
 _FROM_ARGB_RE = re.compile(r"^Color\.FromArgb\((?P<args>.*)\)$", re.DOTALL | re.IGNORECASE)
 _NAMED_COLOR_RE = re.compile(r"^Color\.(?P<name>\w+)$", re.IGNORECASE)
+_QUOTED_RE = re.compile(r"\"([^\"]*)\"")
+
+
 def _split_arguments(args: str) -> list[str]:
     """Split an argument list on commas that are not nested in parentheses."""
     parts: list[str] = []
@@ -237,6 +259,15 @@ def _parse_int(text: str) -> Optional[int]:
     if without_casts.isdigit():
         return int(without_casts)
     return None
+
+
+def _parse_float(text: str) -> Optional[float]:
+    """Parse a float argument, tolerating the C# ``F``/``f`` suffix."""
+    stripped = text.strip().rstrip("Ff")
+    try:
+        return float(stripped)
+    except ValueError:
+        return None
 
 
 def _hex(rgb: int, alpha: int = 255) -> str:
@@ -315,3 +346,72 @@ def to_wpf_brush(expression: Optional[str]) -> Optional[str]:
 
     return None
 
+
+def _font_attributes(
+    family: Optional[str], size: Optional[float], flags: list[str], unit: str
+) -> dict[str, str]:
+    """Build the WPF text properties for a parsed WinForms font.
+
+    ``FontStyle.Underline`` and ``FontStyle.Strikeout`` have no counterpart
+    on a WPF control (``TextDecorations`` only exists on ``TextBlock``), so
+    they are dropped; TODO.md tracks that gap.
+    """
+    attributes: dict[str, str] = {}
+    if family:
+        attributes["FontFamily"] = family
+    if size is not None and size > 0:
+        factor = _UNIT_TO_DIP.get(unit, _UNIT_TO_DIP["point"])
+        attributes["FontSize"] = f"{round(size * factor, 2):g}"
+
+    style = [flag.lower() for flag in flags]
+    if "bold" in style:
+        attributes["FontWeight"] = "Bold"
+    if "italic" in style:
+        attributes["FontStyle"] = "Italic"
+    return attributes
+
+
+def to_wpf_font(expression: Optional[str]) -> dict[str, str]:
+    """Translate a WinForms font expression into WPF text properties.
+
+    Args:
+        expression: WinForms font expression, e.g.
+            ``new Font("Microsoft JhengHei UI", 16F, FontStyle.Regular,
+            GraphicsUnit.Point)``.
+
+    Returns:
+        A mapping of WPF property names (``FontFamily``, ``FontSize``,
+        ``FontWeight``, ``FontStyle``, ``TextDecorations``) to their values.
+        The mapping is empty when the expression cannot be translated.
+    """
+    if not expression:
+        return {}
+
+    match = _FONT_RE.search(expression.strip())
+    if not match:
+        return {}
+
+    parts = _split_arguments(match.group("args"))
+    family: Optional[str] = None
+    size: Optional[float] = None
+    flags: list[str] = []
+    unit = "point"
+
+    for index, part in enumerate(parts):
+        quoted = _QUOTED_RE.search(part)
+        if quoted and family is None:
+            family = quoted.group(1)
+            continue
+        number = _parse_float(part)
+        if number is not None and size is None:
+            size = number
+            continue
+        if "FontStyle" in part or "GraphicsUnit" in part:
+            # The enum may be written with or without its namespace
+            # ("FontStyle.Bold" or "System.Drawing.FontStyle.Bold").
+            for found in re.finditer(r"FontStyle\.(\w+)", part, re.IGNORECASE):
+                flags.append(found.group(1))
+            for found in re.finditer(r"GraphicsUnit\.(\w+)", part, re.IGNORECASE):
+                unit = found.group(1).lower()
+
+    return _font_attributes(family, size, flags, unit)

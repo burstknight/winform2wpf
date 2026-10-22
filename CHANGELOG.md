@@ -15,6 +15,7 @@
 - Golden-file comparison test: every fixture in `tests/fixtures/` is rendered and compared against `tests/expected/`; the goldens were regenerated to the current output (window dimensions, absolute-layout margins, Grid cell definitions) and a golden was added for `07_modern_style`
 - Load-time test that parses the golden XAML with the real WPF parser (`System.Windows.Markup.XamlReader`, run through Windows PowerShell 5.1); the test is skipped when PowerShell or the WPF assemblies are unavailable
 - WinForms colours are translated into WPF appearance: `ForeColor` becomes `Foreground` (`#AARRGGBB`, or a `DynamicResource` on the matching system brush for `SystemColors.*`) and `BackColor` becomes `Background`. Colours are inherited by the children that do not set their own value, just like WinForms does
+- WinForms fonts are translated into WPF text properties: `Font` becomes `FontFamily`/`FontSize`/`FontWeight`/`FontStyle`. The WinForms point size is converted to WPF's 1/96 inch unit (16 points become `FontSize="21.33"`), and a font is inherited by the children that do not set their own value
 
 ### [Changed]
 

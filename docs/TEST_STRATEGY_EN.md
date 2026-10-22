@@ -27,6 +27,7 @@ Synthetic fixtures under `tests/fixtures/` cover representative layouts:
 | 06 | `06_nested_panel.Designer.cs` | Nested containers | Each container inferred independently |
 | 07 | `07_modern_style.Designer.cs` | Designer file without the `this.` qualifier | Same as the classic style |
 | 08 | `08_colors.Designer.cs` | ForeColor/BackColor on groups and children | `Foreground`/`Background` with colour inheritance |
+| 09 | `09_fonts.Designer.cs` | Font sizes and styles | `FontFamily`/`FontSize`/`FontWeight`/`FontStyle` |
 
 Golden files in `tests/expected/` represent the expected XAML structure per case.
 
@@ -36,7 +37,7 @@ Golden files in `tests/expected/` represent the expected XAML structure per case
 - `tests/test_analyzer.py`: Inference rules (FlowLayout→WrapPanel, TableLayout→Grid, Dock→DockPanel, chains→StackPanel, fallback→Grid)
 - `tests/test_mapper.py`: Type/property mappings (Text→Content, x:Name, Visibility/IsEnabled, Dock)
 - `tests/test_renderer.py`: Namespaces, root element, panel types, nesting, layout attributes, XML parseability
-- `tests/test_styles.py`: Colour translation (named colours, `Color.FromArgb`, system colours)
+- `tests/test_styles.py`: Colour and font translation (named colours, `Color.FromArgb`, system colours, font family/size/style)
 - `tests/test_integration.py`: End-to-end against golden files (structural assertions)
 - `tests/test_xaml_load.py`: Parses the golden XAML with the real WPF parser (`System.Windows.Markup.XamlReader`, run through Windows PowerShell 5.1); skipped when PowerShell or the WPF assemblies are unavailable
 - `tests/conftest.py`: Shared fixtures/helpers (load fixtures/expected, temp paths)

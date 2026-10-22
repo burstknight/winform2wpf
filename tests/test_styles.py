@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from wf2wpf.styles import to_wpf_brush
+from wf2wpf.styles import to_wpf_brush, to_wpf_font
 
 
 def test_named_color_becomes_hex():
@@ -59,3 +59,54 @@ def test_empty_and_unknown_colors_are_skipped():
     assert to_wpf_brush("") is None
     assert to_wpf_brush(None) is None
 
+
+def test_font_family_size_and_style():
+    """A font expression becomes the WPF text properties."""
+    attributes = to_wpf_font(
+        'new Font("Microsoft JhengHei UI", 16F, FontStyle.Regular, '
+        "GraphicsUnit.Point)"
+    )
+    assert attributes == {
+        "FontFamily": "Microsoft JhengHei UI",
+        "FontSize": "21.33",
+    }
+
+
+def test_font_size_converts_points_to_dip():
+    """WinForms measures in points, WPF in 1/96 inch, so the size is scaled."""
+    attributes = to_wpf_font('new Font("Arial", 12F)')
+    assert attributes["FontSize"] == "16"
+
+
+def test_font_size_keeps_pixel_units():
+    """A font given in pixels is already a device independent size."""
+    attributes = to_wpf_font(
+        'new Font("Arial", 20F, FontStyle.Regular, GraphicsUnit.Pixel)'
+    )
+    assert attributes["FontSize"] == "20"
+
+
+def test_font_bold_and_italic():
+    """The bold and italic flags map onto the matching WPF properties."""
+    attributes = to_wpf_font(
+        'new Font("Arial", 10F, FontStyle.Bold | FontStyle.Italic)'
+    )
+    assert attributes["FontWeight"] == "Bold"
+    assert attributes["FontStyle"] == "Italic"
+
+
+def test_font_with_namespaced_style_flags():
+    """The designer may qualify the FontStyle enum with its namespace."""
+    attributes = to_wpf_font(
+        'new System.Drawing.Font("Arial", 9.75F, '
+        "System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic)"
+    )
+    assert attributes["FontWeight"] == "Bold"
+    assert attributes["FontStyle"] == "Italic"
+
+
+def test_unparsable_font_is_ignored():
+    """An expression that is not a font must not produce any property."""
+    assert to_wpf_font("garbage") == {}
+    assert to_wpf_font("") == {}
+    assert to_wpf_font(None) == {}

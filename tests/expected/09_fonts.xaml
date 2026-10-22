@@ -1,0 +1,10 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form9" Title="Fonts" Width="360" Height="220">
+	<StackPanel Orientation="Vertical">
+		<GroupBox x:Name="groupBox1" FontFamily="Microsoft JhengHei UI" FontSize="21.33" Header="Group">
+			<StackPanel Orientation="Vertical">
+				<Label x:Name="label1" FontFamily="Microsoft JhengHei UI" FontSize="16" Content="Regular" />
+				<Label x:Name="label2" FontFamily="Arial" FontSize="13" FontWeight="Bold" FontStyle="Italic" Content="Bold italic" />
+			</StackPanel>
+		</GroupBox>
+	</StackPanel>
+</Window>

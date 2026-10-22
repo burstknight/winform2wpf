@@ -34,6 +34,7 @@ class Control:
         visible: Visible flag.
         fore_color: Raw ForeColor expression (e.g. "Color.Green").
         back_color: Raw BackColor expression.
+        font: Raw Font expression (e.g. 'new Font("Arial", 9.75F)').
         column: Column index for TableLayoutPanel.
         row: Row index for TableLayoutPanel.
         column_span: Column span.
@@ -63,6 +64,7 @@ class Control:
     visible: Optional[bool] = None
     fore_color: Optional[str] = None
     back_color: Optional[str] = None
+    font: Optional[str] = None
     column: Optional[int] = None
     row: Optional[int] = None
     column_span: Optional[int] = None
@@ -199,6 +201,8 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
             ctrl.fore_color = val
         elif pl == "backcolor":
             ctrl.back_color = val
+        elif pl == "font":
+            ctrl.font = val
         elif pl in ("columncount", "rowcount"):
             n = re.match(r"\d+", val)
             if n:
@@ -242,6 +246,9 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
         elif pl == "backcolor":
             if root:
                 root.back_color = val
+        elif pl == "font":
+            if root:
+                root.font = val
 
     # Add controls
     # "this.x.Controls.Add(this.y)" (classic) or "x.Controls.Add(y)" (modern),

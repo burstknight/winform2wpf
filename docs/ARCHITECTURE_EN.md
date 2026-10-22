@@ -85,15 +85,17 @@ Mappings (representative):
 - `Dock` → `DockPanel.Dock` (`DockStyle.Fill` has no WPF counterpart, see below)
 - `ForeColor` → `Foreground` (`#AARRGGBB`; a `SystemColors.*` value becomes a `DynamicResource` on the matching system brush)
 - `BackColor` → `Background`
+- `Font` → `FontFamily` / `FontSize` / `FontWeight` / `FontStyle` (WinForms points are converted to WPF's 1/96 inch unit)
 - `TabIndex` → `TabIndex`
 
 Rules sourced from `rules.yaml` where practical.
 
 ### styles.py
 
-Responsibilities: Translate the WinForms colour expressions into WPF values.
+Responsibilities: Translate the WinForms appearance expressions into WPF values.
 
 - `to_wpf_brush()` maps a colour expression (`Color.Green`, `Color.FromArgb(...)`, `SystemColors.ControlText`) to a WPF brush value; the .NET named colours keep their exact value, a system colour refers to the WPF system brush so it keeps following the Windows theme
+- `to_wpf_font()` maps a font expression (`new Font("Arial", 9.75F, FontStyle.Bold)`) to the WPF text properties; the size is scaled from WinForms points to WPF's device independent unit
 - An expression that cannot be translated produces no value at all instead of a guess
 
 ### renderer.py
@@ -105,7 +107,7 @@ Requirements:
 - Root: `Window` for Form (include `Title`, `x:Name` if present)
 - For each container emit correct panel and attach layout-specific attributes to children
 - Map WinForms `DockStyle.Fill` to the WPF fill semantics: the WPF `Dock` enum has no `Fill` member, so the child is emitted without a `Dock` attribute and moved to the end of the `DockPanel`, where `DockPanel.LastChildFill` (True by default) gives it the remaining space. When the last child keeps an explicit `Dock`, `LastChildFill="False"` is emitted so that value is honoured
-- Carry the WinForms `ForeColor` inheritance down the tree: a child without its own colour takes the colour of its container, because the WPF theme styles set `Foreground` on most controls and an inherited colour would otherwise never reach them. WPF panels have no `Foreground`, so a panel hands its colour to its children instead of carrying it itself
+- Carry the WinForms `ForeColor`/`Font` inheritance down the tree: a child without its own value takes the value of its container, because the WPF theme styles set `Foreground` on most controls and an inherited colour would otherwise never reach them. WPF panels have neither `Foreground` nor font properties, so a panel hands its values to its children instead of carrying them itself
 - Use `xml.etree.ElementTree` to build and validate XML structure
 - Output well-formed XAML text
 

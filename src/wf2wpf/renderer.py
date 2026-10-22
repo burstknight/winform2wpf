@@ -3,37 +3,44 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
 from wf2wpf.parser import Control, ControlTree
-from wf2wpf.styles import to_wpf_brush
+from wf2wpf.styles import to_wpf_brush, to_wpf_font
 
 
 @dataclass
 class ElementStyle:
     """Effective appearance of an element and the values it hands down.
 
-    WinForms hands ``ForeColor`` down to the children that do not set their
-    own value. WPF does not: the theme styles of most controls define
-    ``Foreground`` themselves, so the inherited colour never reaches them.
-    The renderer therefore carries the effective value down the tree and
-    writes it on every element.
+    WinForms hands ``ForeColor`` and ``Font`` down to the children that do
+    not set their own value. WPF does not: the theme styles of most controls
+    define ``Foreground`` themselves, so the inherited colour never reaches
+    them. The renderer therefore carries the effective values down the tree
+    and writes them on every element.
     """
 
     foreground: Optional[str] = None
+    font: dict[str, str] = field(default_factory=dict)
 
 
 def _style_of(control: Control) -> ElementStyle:
     """Build the style a control declares itself."""
-    return ElementStyle(foreground=to_wpf_brush(control.fore_color))
+    return ElementStyle(
+        foreground=to_wpf_brush(control.fore_color),
+        font=to_wpf_font(control.font),
+    )
 
 
 def _merge_style(inherited: ElementStyle, own: ElementStyle) -> ElementStyle:
     """Combine the inherited style with the one a control declares itself."""
     foreground = own.foreground if own.foreground is not None else inherited.foreground
-    return ElementStyle(foreground=foreground)
+    # A control that declares a font replaces the inherited one completely,
+    # just like WinForms replaces the inherited Font object.
+    font = dict(own.font) if own.font else dict(inherited.font)
+    return ElementStyle(foreground=foreground, font=font)
 
 
 def render_xaml(
@@ -80,6 +87,8 @@ def render_xaml(
             root_elem.set("Background", background)
         if root_style.foreground:
             root_elem.set("Foreground", root_style.foreground)
+        for key, value in root_style.font.items():
+            root_elem.set(key, value)
 
     # Render children of root
     if tree.root:
@@ -257,8 +266,8 @@ def _create_element(
     return elem
 
 
-# WPF panels have a Background but no Foreground: the colour of such a
-# container is inherited by its children.
+# WPF panels have a Background but no Foreground and no font properties: the
+# colours and fonts of such a container are inherited by its children.
 _PANEL_TYPES = frozenset(("Grid", "StackPanel", "DockPanel", "WrapPanel", "Canvas"))
 
 
@@ -268,7 +277,7 @@ def _set_appearance(
     child_type: str,
     style: ElementStyle,
 ) -> None:
-    """Apply the colour properties of a control to its element."""
+    """Apply the colour and font properties of a control to its element."""
     background = to_wpf_brush(child.back_color)
     if background:
         elem.set("Background", background)
@@ -276,6 +285,8 @@ def _set_appearance(
         return
     if style.foreground:
         elem.set("Foreground", style.foreground)
+    for key, value in style.font.items():
+        elem.set(key, value)
 
 
 # WPF property that carries WinForms Text for each kind of element. GroupBox is

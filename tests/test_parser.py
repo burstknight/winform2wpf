@@ -201,6 +201,18 @@ def test_parse_control_colors_and_font():
     assert radio.fore_color == "System.Drawing.SystemColors.ControlText"
 
 
+def test_parse_font_expression():
+    """The Font assignment is captured as one raw expression."""
+    fixture = get_fixture_path("09_fonts.Designer.cs")
+    tree = parse_designer_cs(fixture)
+    group = tree.get_control("groupBox1")
+    assert group is not None
+    assert group.font == (
+        'new System.Drawing.Font("Microsoft JhengHei UI", 16F, '
+        "System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point)"
+    )
+
+
 def test_parse_form_level_colors_and_font():
     """Form level colours and fonts belong to the root control."""
     designer = (
@@ -221,3 +233,4 @@ def test_parse_form_level_colors_and_font():
         assert tree.root is not None
         assert tree.root.fore_color == "System.Drawing.Color.Red"
         assert tree.root.back_color == "System.Drawing.Color.White"
+        assert tree.root.font == 'new System.Drawing.Font("Arial", 10F)'

@@ -435,6 +435,48 @@ def test_render_backcolor_becomes_background():
     assert _element(xaml, "panel1").get("Background") == "#FFD3D3D3"
 
 
+def test_render_font_becomes_text_properties():
+    """A WinForms font becomes the WPF text properties."""
+    root = Control(name="Form1", type_name="Form")
+    label = Control(
+        name="label1",
+        type_name="System.Windows.Forms.Label",
+        text="Text",
+        font='new Font("Arial", 10F, FontStyle.Bold)',
+    )
+    root.children.append(label)
+    tree = _build_tree(root, [label])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    element = _element(xaml, "label1")
+    assert element.get("FontFamily") == "Arial"
+    assert element.get("FontSize") == "13.33"
+    assert element.get("FontWeight") == "Bold"
+
+
+def test_render_font_is_inherited_by_children():
+    """Children without their own font take the font of their container."""
+    root = Control(name="Form1", type_name="Form")
+    group = Control(
+        name="groupBox1",
+        type_name="System.Windows.Forms.GroupBox",
+        font='new Font("Microsoft JhengHei UI", 16F)',
+    )
+    label = Control(
+        name="label1",
+        type_name="System.Windows.Forms.Label",
+        text="Text",
+    )
+    group.children.append(label)
+    root.children.append(group)
+    tree = _build_tree(root, [group, label])
+
+    xaml = render_xaml(tree, analyze_tree(tree))
+    element = _element(xaml, "label1")
+    assert element.get("FontFamily") == "Microsoft JhengHei UI"
+    assert element.get("FontSize") == "21.33"
+
+
 def test_render_form_level_color_applies_to_the_window():
     """A form level colour belongs to the root Window."""
     root = Control(

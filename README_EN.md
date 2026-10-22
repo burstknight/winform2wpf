@@ -7,6 +7,7 @@
 - Parse WinForms `*.Designer.cs` to build a control tree
 - Infer layout: prefer `WrapPanel`/`DockPanel`/`StackPanel`/`Grid`; `Canvas` only as a last resort
 - Map common WinForms controls and properties to WPF equivalents
+- Translate WinForms colours and fonts into WPF appearance (`Foreground`, `Background`, `FontFamily`/`FontSize`/`FontWeight`/`FontStyle`), including the colour and font inheritance of the child controls
 - Recursively render valid WPF XAML with correct namespaces
 - Generate a conversion report highlighting items that need manual review
 - Designed for both modern .NET WinForms and older .NET Framework WinForms projects

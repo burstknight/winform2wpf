@@ -7,6 +7,7 @@
 - 解析 WinForms `*.Designer.cs`，建立控制項樹（Control Tree）
 - 智慧推斷版面：優先使用 `WrapPanel`、`DockPanel`、`StackPanel`、`Grid`，僅在完全無法推斷時才使用 `Canvas`
 - 將常見的 WinForms 控制項與屬性對應至 WPF 等效項目
+- 將 WinForms 的色彩與字型轉換為 WPF 外觀（`Foreground`、`Background`、`FontFamily`/`FontSize`/`FontWeight`/`FontStyle`），並保留子控制項的色彩與字型繼承
 - 遞迴產生結構正確、含完整命名空間的 WPF XAML
 - 產生轉換報告，清楚列出需人工檢查的項目
 - 同時適用於現代 .NET WinForms 與舊版 .NET Framework WinForms 專案

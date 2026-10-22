@@ -6,3 +6,5 @@
 - Validate WPF load-time behavior: the golden files are now parsed by the real WPF parser on Windows (`tests/test_xaml_load.py`), which catches invalid property and enum values, but nothing opens the rendered window yet; a smoke test that instantiates the window would still catch layout and attached-property errors at runtime.
 - Handle several `DockStyle.Fill` children in one container: WPF gives the remaining space to the last child only, while WinForms lets every fill control consume the remaining space in turn; the extra fill controls currently keep their desired size.
 - Evaluate layout heuristics against more real-world samples: the linear/scattered thresholds (20px) are untested outside the current fixtures; larger corpora may need tunable rules (e.g. via `rules.yaml`).
+- Emit `IsEnabled`/`Visibility`: the mapping table documents `Enabled` -> `IsEnabled` and `Visible` -> `Visibility`, but the renderer still drops both values.
+- Underlined or struck-through text: `FontStyle.Underline`/`FontStyle.Strikeout` have no counterpart on a WPF control (`TextDecorations` only exists on `TextBlock`), so such text needs a `TextBlock` wrapper to keep the decoration.
