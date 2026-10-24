@@ -85,6 +85,12 @@ def render_xaml(
         background = to_wpf_brush(tree.root.back_color)
         if background:
             root_elem.set("Background", background)
+        else:
+            # Match WinForms default form background (Control) when not explicitly set
+            root_elem.set(
+                "Background",
+                "{DynamicResource {x:Static SystemColors.ControlBrushKey}}",
+            )
         if root_style.foreground:
             root_elem.set("Foreground", root_style.foreground)
         for key, value in root_style.font.items():
@@ -227,6 +233,25 @@ def _num(value: float) -> str:
     return f"{value:g}"
 
 
+def _parse_anchor(anchor: Optional[str]) -> set[str]:
+    """Parse AnchorStyles expression into a set of directions."""
+    if not anchor:
+        return set()
+    a = anchor.lower()
+    result = set()
+    if "none" in a:
+        return set()
+    if "left" in a:
+        result.add("left")
+    if "right" in a:
+        result.add("right")
+    if "top" in a:
+        result.add("top")
+    if "bottom" in a:
+        result.add("bottom")
+    return result
+
+
 def _create_element(
     child: Control,
     parent_panel: ET.Element,
@@ -249,19 +274,71 @@ def _create_element(
         # Absolute-layout children (no cell, no dock) keep their WinForms
         # Location/Size as top-left alignment, margin, and explicit size.
         if child.column is None and child.dock is None:
+            anchors = _parse_anchor(child.anchor)
             has_position = child.location_x is not None and child.location_y is not None
-            if has_position or child.size_w is not None or child.size_h is not None:
-                elem.set("HorizontalAlignment", "Left")
-                elem.set("VerticalAlignment", "Top")
-            if has_position:
-                elem.set(
-                    "Margin",
-                    f"{_num(child.location_x)},{_num(child.location_y)},0,0",
-                )
-            if child.size_w is not None:
-                elem.set("Width", _num(child.size_w))
-            if child.size_h is not None:
-                elem.set("Height", _num(child.size_h))
+            if anchors:
+                # Default to stretch if not explicitly constrained
+                h_align = "Left"
+                v_align = "Top"
+                if "left" in anchors and "right" in anchors:
+                    h_align = "Stretch"
+                elif "left" in anchors and "right" not in anchors:
+                    h_align = "Left"
+                elif "right" in anchors and "left" not in anchors:
+                    h_align = "Right"
+                else:
+                    h_align = "Left"
+                if "top" in anchors and "bottom" in anchors:
+                    v_align = "Stretch"
+                elif "top" in anchors and "bottom" not in anchors:
+                    v_align = "Top"
+                elif "bottom" in anchors and "top" not in anchors:
+                    v_align = "Bottom"
+                else:
+                    v_align = "Top"
+                elem.set("HorizontalAlignment", h_align)
+                elem.set("VerticalAlignment", v_align)
+                # For stretched cases, use margins to preserve distances from anchored edges
+                if has_position:
+                    left_m = child.location_x if child.location_x is not None else 0
+                    top_m = child.location_y if child.location_y is not None else 0
+                    right_m = 0
+                    bottom_m = 0
+                    if h_align == "Stretch":
+                        # approximate: keep left margin, right margin 0; width will stretch
+                        elem.set("Margin", f"{_num(left_m)},0,0,0")
+                    elif h_align == "Right":
+                        elem.set("HorizontalAlignment", "Right")
+                        elem.set("Margin", f"0,{_num(top_m)},{_num(left_m)},0")
+                    else:
+                        if v_align == "Stretch":
+                            elem.set("Margin", f"{_num(left_m)},0,0,0")
+                        elif v_align == "Bottom":
+                            elem.set("VerticalAlignment", "Bottom")
+                            elem.set("Margin", f"{_num(left_m)},0,0,{_num(top_m)}")
+                        else:
+                            elem.set("Margin", f"{_num(left_m)},{_num(top_m)},0,0")
+                if child.size_w is not None and h_align != "Stretch":
+                    elem.set("Width", _num(child.size_w))
+                if child.size_h is not None and v_align != "Stretch":
+                    elem.set("Height", _num(child.size_h))
+                if h_align == "Stretch" and child.size_w is not None:
+                    pass  # let it stretch; could use MinWidth if needed
+                if v_align == "Stretch" and child.size_h is not None:
+                    pass
+            else:
+                if has_position or child.size_w is not None or child.size_h is not None:
+                    elem.set("HorizontalAlignment", "Left")
+                    elem.set("VerticalAlignment", "Top")
+                if has_position:
+                    elem.set(
+                        "Margin",
+                        f"{_num(child.location_x)},{_num(child.location_y)},0,0",
+                    )
+                if child.size_w is not None:
+                    elem.set("Width", _num(child.size_w))
+                if child.size_h is not None:
+                    elem.set("Height", _num(child.size_h))
     _set_appearance(child, elem, child_type, style)
     return elem
 
