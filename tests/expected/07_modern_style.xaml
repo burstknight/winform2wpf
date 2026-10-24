@@ -1,4 +1,4 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form7" Title="現代風格表單" Width="320" Height="240">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form7" Title="現代風格表單" Width="320" Height="240" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
 	<StackPanel Orientation="Vertical">
 		<GroupBox x:Name="groupBox1" Header="站號">
 			<StackPanel Orientation="Horizontal">

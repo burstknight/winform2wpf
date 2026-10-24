@@ -1,4 +1,4 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form4" Title="Flow" Width="284" Height="74">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form4" Title="Flow" Width="284" Height="74" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
 	<StackPanel Orientation="Vertical">
 		<WrapPanel x:Name="flowLayoutPanel1">
 			<Button x:Name="button1" Content="A" />

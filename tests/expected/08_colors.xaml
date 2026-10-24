@@ -1,4 +1,4 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form8" Title="Colors" Width="360" Height="260">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Form8" Title="Colors" Width="360" Height="260" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
 	<DockPanel>
 		<GroupBox x:Name="groupBox1" DockPanel.Dock="Top" Foreground="#FF008000" Header="Group">
 			<StackPanel Orientation="Vertical">
