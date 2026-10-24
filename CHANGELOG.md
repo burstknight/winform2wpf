@@ -3,6 +3,10 @@
 ## [Unreleased]
 ### [Added]
 
+- Parser now captures `Anchor` (`Control.anchor`) from WinForms designer assignments for use in layout inference/rendering
+- Renderer applies WinForms default form background (`SystemColors.ControlBrushKey`) to the root `Window` when `BackColor` is not explicitly set, improving visual parity with WinForms
+- Renderer uses `AnchorStyles` to adjust alignment/stretching for absolute Grid layouts (Left/Right or Top/Bottom combinations stretch to match container edges)
+
 - Bilingual maintenance guide (`docs/CONTRIBUTING_EN.md`, `docs/CONTRIBUTING_ZH-TW.md`)
 - Initial wf2wpf tool skeleton with `src/wf2wpf/` modules (`parser`, `analyzer`, `mapper`, `renderer`, `report`, `resources`, `cli`)
 - CLI entry point `wf2wpf convert` with `--report` support
