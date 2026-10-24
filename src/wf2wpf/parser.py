@@ -181,6 +181,9 @@ def parse_designer_cs(path: str | Path, reader: Optional[TextFileReader] = None)
             d = re.search(r"DockStyle\.(\w+)", val)
             if d:
                 ctrl.dock = d.group(1)
+        elif pl == "anchor":
+            # Capture the full AnchorStyles expression for later inference
+            ctrl.anchor = val
         elif pl == "location":
             p = re.search(r"Point\(([^,]+),\s*([^)]+)\)", val)
             if p:
