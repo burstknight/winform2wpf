@@ -3,6 +3,21 @@
 ## [Unreleased]
 ### [Added]
 
+### [Changed]
+
+### [Fixed]
+
+### [Security]
+
+### [Removed]
+
+### [Deprecated]
+
+
+----------
+## [0.1.0] - 2026/10/28
+### [Added]
+
 - Parser now captures `Anchor` (`Control.anchor`) from WinForms designer assignments for use in layout inference/rendering
 - Renderer applies WinForms default form background (`SystemColors.ControlBrushKey`) to the root `Window` when `BackColor` is not explicitly set, improving visual parity with WinForms
 - Renderer uses `AnchorStyles` to adjust alignment/stretching for absolute Grid layouts (Left/Right or Top/Bottom combinations stretch to match container edges)
@@ -37,10 +52,4 @@
 - Analyzer now separates vertical linear chains from layouts scattered on both axes: scattered containers infer a `Grid` (the priority its docstring already promised) instead of a vertical `StackPanel` that reflowed absolute layouts
 - Absolute layout fidelity: children of layout `Grid`s keep their WinForms `Location`/`Size` as `HorizontalAlignment`/`VerticalAlignment` + `Margin` + `Width`/`Height`, and the form `ClientSize` becomes the WPF `Window` `Width`/`Height`; parsed `Location`/`Size` data was previously discarded by the renderer
 - Renderer no longer emits the invalid `DockPanel.Dock="Fill"`: WPF's `Dock` enum has no `Fill` member, so Visual Studio reported `XAML0431` for every occurrence and the generated window failed to load. WinForms `DockStyle.Fill` children are now emitted without a `Dock` attribute and moved to the end of the `DockPanel`, where `DockPanel.LastChildFill` (True by default) gives them the remaining space; `DockPanel.LastChildFill="False"` is emitted when the last child keeps an explicit `Dock`
-
-### [Security]
-
-### [Removed]
-
-### [Deprecated]
 
